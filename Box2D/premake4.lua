@@ -63,5 +63,5 @@ solution "Box2D"
 		configuration { "macosx" }
 			linkoptions { "-framework OpenGL -framework GLUT" }
 		configuration { "not windows", "not macosx" }
-			links { "X11", "GL", "GLU", "glut" }
+			links { "X11", "GL", "GLU", "glut", "glfw", "GLEW" }
 
