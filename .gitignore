@@ -1,4 +1,5 @@
-Box2D\Build\vs2015\.vs
-Box2D\Build\vs2015\*.db
-Box2D\Build\vs2015\bin
-Box2D\Build\vs2015\obj
+/Box2D/Build/vs2015/.vs
+/Box2D/Build/vs2015/Box2D.VC.db
+/Box2D/Build/vs2015/Box2D.VC.VC.opendb
+/Box2D/Build/vs2015/bin
+/Box2D/Build/vs2015/obj
