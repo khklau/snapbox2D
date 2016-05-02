@@ -233,6 +233,7 @@
     <ClInclude Include="..\..\Testbed\Tests\DynamicTreeTest.h" />
     <ClInclude Include="..\..\Testbed\Tests\EdgeShapes.h" />
     <ClInclude Include="..\..\Testbed\Tests\EdgeTest.h" />
+    <ClInclude Include="..\..\Testbed\Tests\Football.h" />
     <ClInclude Include="..\..\Testbed\Tests\Gears.h" />
     <ClInclude Include="..\..\Testbed\Tests\Mobile.h" />
     <ClInclude Include="..\..\Testbed\Tests\MobileBalanced.h" />

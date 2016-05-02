@@ -42,6 +42,7 @@
 #include "DynamicTreeTest.h"
 #include "EdgeShapes.h"
 #include "EdgeTest.h"
+#include "Football.h"
 #include "Gears.h"
 #include "HeavyOnLight.h"
 #include "HeavyOnLightTwo.h"
@@ -125,5 +126,6 @@ TestEntry g_testEntries[] =
 	{"Sensor Test", SensorTest::Create},
 	{"Varying Friction", VaryingFriction::Create},
 	{"Add Pair Stress Test", AddPair::Create},
+	{"Football", Football::Create},
 	{NULL, NULL}
 };
