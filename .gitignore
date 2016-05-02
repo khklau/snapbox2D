@@ -1,0 +1,4 @@
+Box2D\Build\vs2015\.vs
+Box2D\Build\vs2015\*.db
+Box2D\Build\vs2015\bin
+Box2D\Build\vs2015\obj
