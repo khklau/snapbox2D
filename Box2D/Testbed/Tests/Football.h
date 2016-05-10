@@ -91,7 +91,7 @@ torso::torso(b2World& world)
 	vertices[6].Set(-2, 0.5);
 	vertices[7].Set(-2, -0.5);
 	b2PolygonShape poly;
-	poly.Set(vertices.data(), vertices.size());
+	poly.Set(vertices.data(), vertices.max_size());
 	b2FixtureDef fix_def;
 	fix_def.shape = &poly;
 	body_def.position.Set(0, 0);
@@ -118,20 +118,24 @@ struct head_key
 class head
 {
 public:
-	explicit head(b2World& world);
+	head(b2World& world, std::size_t vision_radius = 20U, std::size_t vision_degree = 120U);
 	~head() noexcept;
 	inline b2Body& get_body(const head_key&) { return *body_; }
 private:
 	b2World& world_;
 	b2Body* body_;
-	b2Fixture* fixture_;
+	b2Fixture* head_fixture_;
+	b2Fixture* vision1_fixture_;
+	b2Fixture* vision2_fixture_;
 };
 
-head::head(b2World& world)
+head::head(b2World& world, std::size_t vision_radius, std::size_t vision_degree)
 	:
 		world_(world),
 		body_(nullptr),
-		fixture_(nullptr)
+		head_fixture_(nullptr),
+		vision1_fixture_(nullptr),
+		vision2_fixture_(nullptr)
 {
 	b2BodyDef body_def;
 	body_def.type = b2_dynamicBody;
@@ -142,9 +146,37 @@ head::head(b2World& world)
 	b2CircleShape circle;
 	circle.m_p.Set(0, 0);
 	circle.m_radius = 1;
-	b2FixtureDef fix_def;
-	fix_def.shape = &circle;
-	fixture_ = body_->CreateFixture(&fix_def);
+	b2FixtureDef head_fix_def;
+	head_fix_def.shape = &circle;
+	head_fixture_ = body_->CreateFixture(&head_fix_def);
+	
+	std::size_t arc_degree = vision_degree / 2;
+
+	b2PolygonShape arc1;
+	std::array<b2Vec2, 8> vertices1;
+	vertices1[0].Set(0, 0);
+	for (std::size_t vertex = 0; vertex < (vertices1.max_size() - 1); ++vertex)
+	{
+		float angle = ((vertex / (vertices1.max_size() - 2.0) * arc_degree) - arc_degree) *deg2rad;
+		vertices1[vertex + 1].Set(vision_radius * cosf(angle), vision_radius * sinf(angle));
+	}
+	arc1.Set(vertices1.data(), vertices1.max_size());
+	b2FixtureDef vision1_fix_def;
+	vision1_fix_def.shape = &arc1;
+	vision1_fixture_ = body_->CreateFixture(&vision1_fix_def);
+
+	b2PolygonShape arc2;
+	std::array<b2Vec2, 8> vertices2;
+	vertices2[0].Set(0, 0);
+	for (std::size_t vertex = 0; vertex < (vertices2.max_size() - 1); ++vertex)
+	{
+		float angle = (vertex / (vertices1.max_size() - 2.0) * arc_degree) *deg2rad;
+		vertices2[vertex + 1].Set(vision_radius * cosf(angle), vision_radius * sinf(angle));
+	}
+	arc2.Set(vertices2.data(), vertices2.max_size());
+	b2FixtureDef vision2_fix_def;
+	vision2_fix_def.shape = &arc2;
+	vision2_fixture_ = body_->CreateFixture(&vision2_fix_def);
 }
 
 head::~head() noexcept
@@ -193,7 +225,7 @@ foot::foot(b2World& world)
 	vertices[2].Set(0.5, 1);
 	vertices[3].Set(-0.5, 1);
 	b2PolygonShape poly;
-	poly.Set(vertices.data(), vertices.size());
+	poly.Set(vertices.data(), vertices.max_size());
 	b2FixtureDef fix_def;
 	fix_def.shape = &poly;
 	body_def.position.Set(0, 0);
@@ -229,7 +261,7 @@ neck::neck(b2World& world, torso& torso, head& head)
 {
 	b2RevoluteJointDef joint_def;
 	joint_def.bodyA = &torso.get_body(torso_key());
-	joint_def.bodyB = &head.get_body(head_key()); 
+	joint_def.bodyB = &head.get_body(head_key());
 	joint_def.collideConnected = false;
 	joint_def.localAnchorA.Set(0, 0);
 	joint_def.localAnchorB.Set(0, 0);
