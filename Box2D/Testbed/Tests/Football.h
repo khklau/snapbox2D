@@ -82,14 +82,14 @@ torso::torso(b2World& world)
 	body_ = world_.CreateBody(&body_def);
 
 	std::array<b2Vec2, 8> vertices;
-	vertices[0].Set(-1, -1);
-	vertices[1].Set(1, -1);
-	vertices[2].Set(2, -0.5);
-	vertices[3].Set(2, 0.5);
-	vertices[4].Set(1, 1);
-	vertices[5].Set(-1, 1);
-	vertices[6].Set(-2, 0.5);
-	vertices[7].Set(-2, -0.5);
+	vertices[0].Set(1, -1);
+	vertices[1].Set(1, 1);
+	vertices[2].Set(0.5, 2);
+	vertices[3].Set(-0.5, 2);
+	vertices[4].Set(-1, 1);
+	vertices[5].Set(-1, -1);
+	vertices[6].Set(-0.5, -2);
+	vertices[7].Set(0.5, -2);
 	b2PolygonShape poly;
 	poly.Set(vertices.data(), vertices.max_size());
 	b2FixtureDef fix_def;
@@ -140,7 +140,7 @@ head::head(b2World& world, std::size_t vision_radius, std::size_t vision_degree)
 	b2BodyDef body_def;
 	body_def.type = b2_dynamicBody;
 	body_def.position.Set(0, 0);
-	body_def.angle = 90 * deg2rad;
+	body_def.angle = 0 * deg2rad;
 	body_ = world_.CreateBody(&body_def);
 
 	b2CircleShape circle;
@@ -220,10 +220,10 @@ foot::foot(b2World& world)
 	body_ = world_.CreateBody(&body_def);
 
 	std::array<b2Vec2, 4> vertices;
-	vertices[0].Set(-0.5, -1);
-	vertices[1].Set(0.5, -1);
-	vertices[2].Set(0.5, 1);
-	vertices[3].Set(-0.5, 1);
+	vertices[0].Set(1, 0.5);
+	vertices[1].Set(1, -0.5);
+	vertices[2].Set(-1, -0.5);
+	vertices[3].Set(-1, 0.5);
 	b2PolygonShape poly;
 	poly.Set(vertices.data(), vertices.max_size());
 	b2FixtureDef fix_def;
