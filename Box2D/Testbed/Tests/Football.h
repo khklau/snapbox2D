@@ -28,7 +28,7 @@ ball::ball(b2World& world)
 {
 	b2BodyDef body_def;
 	body_def.type = b2_dynamicBody;
-	body_def.position.Set(20, 20);
+	body_def.position.Set(0, 20);
 	body_def.angle = 0 * deg2rad;
 	body_ = world_.CreateBody(&body_def);
 
@@ -248,7 +248,7 @@ class neck
 {
 public:
 	neck(b2World& world, torso& torso, head& head);
-	~neck();
+	~neck() noexcept;
 private:
 	b2World& world_;
 	b2RevoluteJoint* joint_;
@@ -287,7 +287,7 @@ class hip
 {
 public:
 	hip(b2World& world, torso& torso, foot& foot);
-	~hip();
+	~hip() noexcept;
 private:
 	b2World& world_;
 	b2PrismaticJoint* joint_;
@@ -342,6 +342,109 @@ player::player(b2World& world)
 		hip_(world, torso_, foot_)
 {}
 
+class goal
+{
+public:
+	explicit goal(b2World& world);
+	~goal() noexcept;
+private:
+	b2World& world_;
+	b2Body* body_;
+	b2Fixture* back_net_;
+	b2Fixture* left_net_;
+	b2Fixture* right_net_;
+	b2Fixture* left_post_;
+	b2Fixture* right_post_;
+	b2Fixture* sensor_;
+};
+
+goal::goal(b2World& world)
+	:
+		world_(world),
+		body_(nullptr),
+		back_net_(nullptr),
+		left_net_(nullptr),
+		right_net_(nullptr),
+		left_post_(nullptr),
+		right_post_(nullptr),
+		sensor_(nullptr)
+{
+	b2BodyDef body_def;
+	body_def.type = b2_staticBody;
+	body_def.position.Set(-20, 20);
+	body_def.angle = 0;
+	body_ = world_.CreateBody(&body_def);
+
+	std::array<b2Vec2, 2> back_vertices;
+	back_vertices[0].Set(-4.0, 12.0);
+	back_vertices[1].Set(-4.0, -12.0);
+	b2EdgeShape back_shape;
+	back_shape.Set(back_vertices[0], back_vertices[1]);
+	back_shape.m_hasVertex0 = false;
+	back_shape.m_hasVertex3 = false;
+	b2FixtureDef back_def;
+	back_def.shape = &back_shape;
+	back_net_ = body_->CreateFixture(&back_def);
+
+	std::array<b2Vec2, 2> left_vertices;
+	left_vertices[0].Set(-4.0, 12.0);
+	left_vertices[1].Set(-0.5, 12.0);
+	b2EdgeShape left_shape;
+	left_shape.Set(left_vertices[0], left_vertices[1]);
+	left_shape.m_hasVertex0 = false;
+	left_shape.m_hasVertex3 = false;
+	b2FixtureDef left_net_def;
+	left_net_def.shape = &left_shape;
+	left_net_ = body_->CreateFixture(&left_net_def);
+
+	std::array<b2Vec2, 2> right_vertices;
+	right_vertices[0].Set(-4.0, -12.0);
+	right_vertices[1].Set(-0.5, -12.0);
+	b2EdgeShape right_shape;
+	right_shape.Set(right_vertices[0], right_vertices[1]);
+	right_shape.m_hasVertex0 = false;
+	right_shape.m_hasVertex3 = false;
+	b2FixtureDef right_net_def;
+	right_net_def.shape = &right_shape;
+	right_net_ = body_->CreateFixture(&right_net_def);
+
+	b2CircleShape left_post;
+	left_post.m_p.Set(0.0, 12.0);
+	left_post.m_radius = 0.5;
+	b2FixtureDef left_post_def;
+	left_post_def.shape = &left_post;
+	left_post_ = body_->CreateFixture(&left_post_def);
+
+	b2CircleShape right_post;
+	right_post.m_p.Set(0.0, -12.0);
+	right_post.m_radius = 0.5;
+	b2FixtureDef right_post_def;
+	right_post_def.shape = &right_post;
+	right_post_ = body_->CreateFixture(&right_post_def);
+
+	std::array<b2Vec2, 4> sensor_vertices;
+	sensor_vertices[0].Set(-4.0, 12.0);
+	sensor_vertices[1].Set(-2.0, 12.0);
+	sensor_vertices[2].Set(-2.0, -12.0);
+	sensor_vertices[3].Set(-4.0, -12.0);
+	b2PolygonShape sensor_box;
+	sensor_box.Set(sensor_vertices.data(), sensor_vertices.max_size());
+	b2FixtureDef sensor_def;
+	sensor_def.shape = &sensor_box;
+	sensor_ = body_->CreateFixture(&sensor_def);
+}
+
+goal::~goal() noexcept
+{
+	try
+	{
+	}
+	catch (...)
+	{
+		// do nothing
+	}
+}
+
 class Football : public Test
 {
 public:
@@ -351,13 +454,15 @@ public:
 private:
 	ball ball_;
 	player player1_;
+	goal left_goal_;
 };
 
 Football::Football()
 	:
 		Test(),
 		ball_(*m_world),
-		player1_(*m_world)
+		player1_(*m_world),
+		left_goal_(*m_world)
 {
 	m_world->SetGravity(b2Vec2(0, 0));
 }
