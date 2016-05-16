@@ -28,7 +28,7 @@ ball::ball(b2World& world)
 {
 	b2BodyDef body_def;
 	body_def.type = b2_dynamicBody;
-	body_def.position.Set(0, 30);
+	body_def.position.Set(0, 20);
 	body_def.angle = 0 * deg2rad;
 	body_ = world_.CreateBody(&body_def);
 
@@ -163,6 +163,7 @@ head::head(b2World& world, std::size_t vision_radius, std::size_t vision_degree)
 	arc1.Set(vertices1.data(), vertices1.max_size());
 	b2FixtureDef vision1_fix_def;
 	vision1_fix_def.shape = &arc1;
+	vision1_fix_def.isSensor = true;
 	vision1_fixture_ = body_->CreateFixture(&vision1_fix_def);
 
 	b2PolygonShape arc2;
@@ -176,6 +177,7 @@ head::head(b2World& world, std::size_t vision_radius, std::size_t vision_degree)
 	arc2.Set(vertices2.data(), vertices2.max_size());
 	b2FixtureDef vision2_fix_def;
 	vision2_fix_def.shape = &arc2;
+	vision2_fix_def.isSensor = true;
 	vision2_fixture_ = body_->CreateFixture(&vision2_fix_def);
 }
 
@@ -463,6 +465,7 @@ goal::goal(b2World& world)
 	sensor_box.Set(sensor_vertices.data(), sensor_vertices.max_size());
 	b2FixtureDef sensor_def;
 	sensor_def.shape = &sensor_box;
+	sensor_def.isSensor = true;
 	sensor_ = body_->CreateFixture(&sensor_def);
 }
 
