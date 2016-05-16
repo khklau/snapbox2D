@@ -28,7 +28,7 @@ ball::ball(b2World& world)
 {
 	b2BodyDef body_def;
 	body_def.type = b2_dynamicBody;
-	body_def.position.Set(0, 20);
+	body_def.position.Set(0, 30);
 	body_def.angle = 0 * deg2rad;
 	body_ = world_.CreateBody(&body_def);
 
@@ -249,7 +249,12 @@ class neck
 public:
 	neck(b2World& world, torso& torso, head& head);
 	~neck() noexcept;
+	void apply_control();
+	void turn(std::int16_t velocity);
+	inline float get_head_angle() const { return joint_->GetBodyB()->GetAngle(); };
 private:
+	inline b2Body& get_torso_body() { return *(joint_->GetBodyA()); }
+	inline b2Body& get_head_body() { return *(joint_->GetBodyB()); }
 	b2World& world_;
 	b2RevoluteJoint* joint_;
 };
@@ -281,6 +286,25 @@ neck::~neck() noexcept
 	{
 		// do nothing
 	}
+}
+
+void neck::apply_control()
+{
+	if (get_head_body().GetAngle() >= joint_->GetUpperLimit())
+	{
+		get_head_body().SetAngularVelocity(0.0);
+		get_head_body().SetTransform(get_head_body().GetPosition(), joint_->GetUpperLimit());
+	}
+	else if (get_head_body().GetAngle() <= joint_->GetLowerLimit())
+	{
+		get_head_body().SetAngularVelocity(0.0);
+		get_head_body().SetTransform(get_head_body().GetPosition(), joint_->GetLowerLimit());
+	}
+}
+
+void neck::turn(std::int16_t velocity)
+{
+	get_head_body().SetAngularVelocity(velocity / 1000.0);
 }
 
 class hip
@@ -325,6 +349,9 @@ class player
 {
 public:
 	explicit player(b2World& world);
+	void apply_control();
+	inline void turn_head(std::int16_t velocity) { neck_.turn(velocity); };
+	inline float get_head_angle() const { return neck_.get_head_angle(); };
 private:
 	torso torso_;
 	head head_;
@@ -341,6 +368,11 @@ player::player(b2World& world)
 		neck_(world, torso_, head_),
 		hip_(world, torso_, foot_)
 {}
+
+void player::apply_control()
+{
+	neck_.apply_control();
+}
 
 class goal
 {
@@ -450,6 +482,7 @@ class Football : public Test
 public:
 	Football();
 	virtual void Step(Settings* settings);
+	virtual void Keyboard(int key);
 	static Test* Create();
 private:
 	ball ball_;
@@ -470,6 +503,22 @@ Football::Football()
 void Football::Step(Settings* settings)
 {
 	Test::Step(settings);
+	g_debugDraw.DrawString(5, m_textLine, "Player head angle: %3.2f", player1_.get_head_angle() * rad2deg);
+	m_textLine += DRAW_STRING_NEW_LINE;
+	player1_.apply_control();
+}
+
+void Football::Keyboard(int key)
+{
+	switch (key)
+	{
+		case GLFW_KEY_Q:
+			player1_.turn_head(200);
+			break;
+		case GLFW_KEY_E:
+			player1_.turn_head(-200);
+			break;
+	}
 }
 
 Test* Football::Create()
