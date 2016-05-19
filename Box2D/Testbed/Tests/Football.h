@@ -2,12 +2,28 @@
 #define FOOTBALL_H
 
 #include <array>
+#include <limits>
 #include "../Framework/Test.h"
 #include "../Box2D/Box2D/Dynamics/b2World.h"
 #include "../Box2D/Box2D/Collision/Shapes/b2CircleShape.h"
 
 static const float deg2rad = 0.0174532925199432957f;
 static const float rad2deg = 57.295779513082320876f;
+
+namespace entity
+{
+	enum type : std::uint16_t
+	{
+		ball = 0,
+		goal,
+		goal_sensor,
+		player_torso,
+		player_foot,
+		player_head,
+		player_sensor,
+		field_sensor
+	};
+}
 
 class ball
 {
@@ -37,6 +53,8 @@ ball::ball(b2World& world)
 	circle.m_radius = 1;
 	b2FixtureDef fix_def;
 	fix_def.shape = &circle;
+	fix_def.filter.categoryBits = entity::ball;
+	fix_def.filter.maskBits = std::numeric_limits<entity::type>::max();
 	fixture_ = body_->CreateFixture(&fix_def);
 }
 
@@ -60,7 +78,7 @@ struct torso_key
 class torso
 {
 public:
-	explicit torso(b2World& world);
+	torso(b2World& world, std::uint8_t id);
 	~torso() noexcept;
 	inline b2Body& get_body(const torso_key&) { return *body_; }
 private:
@@ -69,7 +87,7 @@ private:
 	b2Fixture* fixture_;
 };
 
-torso::torso(b2World& world)
+torso::torso(b2World& world, std::uint8_t id)
 	:
 		world_(world),
 		body_(nullptr),
@@ -94,6 +112,9 @@ torso::torso(b2World& world)
 	poly.Set(vertices.data(), vertices.max_size());
 	b2FixtureDef fix_def;
 	fix_def.shape = &poly;
+	fix_def.filter.categoryBits = entity::player_torso;
+	fix_def.filter.maskBits = std::numeric_limits<entity::type>::max();
+	fix_def.filter.groupIndex = id * -1;
 	body_def.position.Set(0, 0);
 	body_ = world_.CreateBody(&body_def);
 	fixture_ = body_->CreateFixture(&fix_def);
@@ -118,7 +139,7 @@ struct head_key
 class head
 {
 public:
-	head(b2World& world, std::size_t vision_radius = 20U, std::size_t vision_degree = 120U);
+	head(b2World& world, std::uint8_t id, std::size_t vision_radius = 20U, std::size_t vision_degree = 120U);
 	~head() noexcept;
 	inline b2Body& get_body(const head_key&) { return *body_; }
 private:
@@ -129,7 +150,7 @@ private:
 	b2Fixture* vision2_fixture_;
 };
 
-head::head(b2World& world, std::size_t vision_radius, std::size_t vision_degree)
+head::head(b2World& world, std::uint8_t id, std::size_t vision_radius, std::size_t vision_degree)
 	:
 		world_(world),
 		body_(nullptr),
@@ -147,7 +168,11 @@ head::head(b2World& world, std::size_t vision_radius, std::size_t vision_degree)
 	circle.m_p.Set(0, 0);
 	circle.m_radius = 1;
 	b2FixtureDef head_fix_def;
+	head_fix_def.filter.categoryBits = entity::player_head;
+	head_fix_def.filter.maskBits = std::numeric_limits<entity::type>::max();
+	head_fix_def.filter.groupIndex = id * -1;
 	head_fix_def.shape = &circle;
+
 	head_fixture_ = body_->CreateFixture(&head_fix_def);
 	
 	std::size_t arc_degree = vision_degree / 2;
@@ -164,6 +189,9 @@ head::head(b2World& world, std::size_t vision_radius, std::size_t vision_degree)
 	b2FixtureDef vision1_fix_def;
 	vision1_fix_def.shape = &arc1;
 	vision1_fix_def.isSensor = true;
+	vision1_fix_def.filter.categoryBits = entity::player_sensor;
+	vision1_fix_def.filter.maskBits = std::numeric_limits<entity::type>::max();
+	vision1_fix_def.filter.groupIndex = id * -1;
 	vision1_fixture_ = body_->CreateFixture(&vision1_fix_def);
 
 	b2PolygonShape arc2;
@@ -178,6 +206,9 @@ head::head(b2World& world, std::size_t vision_radius, std::size_t vision_degree)
 	b2FixtureDef vision2_fix_def;
 	vision2_fix_def.shape = &arc2;
 	vision2_fix_def.isSensor = true;
+	vision2_fix_def.filter.categoryBits = entity::player_sensor;
+	vision2_fix_def.filter.maskBits = std::numeric_limits<entity::type>::max();
+	vision2_fix_def.filter.groupIndex = id * -1;
 	vision2_fixture_ = body_->CreateFixture(&vision2_fix_def);
 }
 
@@ -200,7 +231,7 @@ struct foot_key
 class foot
 {
 public:
-	explicit foot(b2World& world);
+	foot(b2World& world, std::uint8_t id);
 	~foot() noexcept;
 	inline b2Body& get_body(const foot_key&) { return *body_; }
 private:
@@ -209,7 +240,7 @@ private:
 	b2Fixture* fixture_;
 };
 
-foot::foot(b2World& world)
+foot::foot(b2World& world, std::uint8_t id)
 	:
 		world_(world),
 		body_(nullptr),
@@ -230,6 +261,9 @@ foot::foot(b2World& world)
 	poly.Set(vertices.data(), vertices.max_size());
 	b2FixtureDef fix_def;
 	fix_def.shape = &poly;
+	fix_def.filter.categoryBits = entity::player_foot;
+	fix_def.filter.maskBits = std::numeric_limits<entity::type>::max();
+	fix_def.filter.groupIndex = id * -1;
 	body_def.position.Set(0, 0);
 	body_ = world_.CreateBody(&body_def);
 	fixture_ = body_->CreateFixture(&fix_def);
@@ -314,22 +348,31 @@ class hip
 public:
 	hip(b2World& world, torso& torso, foot& foot);
 	~hip() noexcept;
+	void apply_control();
+	void move(std::int16_t velocity);
+	inline float get_foot_translation() const { return joint_->GetJointTranslation(); }
+	inline float get_foot_speed() const { return joint_->GetJointSpeed(); }
 private:
+	inline b2Body& get_torso_body() { return *(joint_->GetBodyA()); }
+	inline b2Body& get_foot_body() { return *(joint_->GetBodyB()); }
 	b2World& world_;
 	b2PrismaticJoint* joint_;
+	std::int16_t velocity_;
 };
 
 hip::hip(b2World& world, torso& torso, foot& foot)
 	:
 		world_(world),
-		joint_(nullptr)
+		joint_(nullptr),
+		velocity_(0)
 {
 	b2PrismaticJointDef joint_def;
 	joint_def.bodyA = &torso.get_body(torso_key());
 	joint_def.bodyB = &foot.get_body(foot_key());
 	joint_def.localAnchorA.Set(0, 0);
 	joint_def.localAnchorB.Set(0, 0);
-	joint_def.localAxisA.Set(0, 1);
+	joint_def.localAxisA.Set(1, 0);
+	joint_def.localAxisA.Normalize();
 	joint_def.enableLimit = true;
 	joint_def.lowerTranslation = 0;
 	joint_def.upperTranslation = 2;
@@ -347,14 +390,38 @@ hip::~hip() noexcept
 	}
 }
 
+void hip::apply_control()
+{
+	if (velocity_ != 0 && (get_foot_translation() >= joint_->GetUpperLimit() ||
+			get_foot_translation() <= joint_->GetLowerLimit()))
+	{
+		velocity_ = 0;
+		get_foot_body().ApplyLinearImpulse(b2Vec2(get_foot_speed() * -1, 0), get_foot_body().GetWorldCenter(), true);
+	}
+	else if (velocity_ != 0)
+	{
+		get_foot_body().ApplyLinearImpulse(b2Vec2(velocity_ / 1000.0, 0), get_foot_body().GetWorldCenter(), true);
+	}
+}
+
+void hip::move(std::int16_t velocity)
+{
+	velocity_ = velocity;
+	get_foot_body().ApplyLinearImpulse(b2Vec2(velocity_ / 1000.0, 0), get_foot_body().GetWorldCenter(), true);
+}
+
 class player
 {
 public:
-	explicit player(b2World& world);
+	player(b2World& world, std::uint8_t id);
 	void apply_control();
-	inline void turn_head(std::int16_t velocity) { neck_.turn(velocity); };
-	inline float get_head_angle() const { return neck_.get_head_angle(); };
+	inline void turn_head(std::int16_t velocity) { neck_.turn(velocity); }
+	inline void move_foot(std::int16_t velocity) { hip_.move(velocity); }
+	inline float get_head_angle() const { return neck_.get_head_angle(); }
+	inline float get_foot_translation() const { return hip_.get_foot_translation(); }
+	inline float get_foot_speed() const { return hip_.get_foot_speed(); }
 private:
+	std::uint8_t id_;
 	torso torso_;
 	head head_;
 	foot foot_;
@@ -362,11 +429,12 @@ private:
 	hip hip_;
 };
 
-player::player(b2World& world)
+player::player(b2World& world, std::uint8_t id)
 	:
-		torso_(world),
-		head_(world),
-		foot_(world),
+		id_(id),
+		torso_(world, id_),
+		head_(world, id_),
+		foot_(world, id_),
 		neck_(world, torso_, head_),
 		hip_(world, torso_, foot_)
 {}
@@ -374,6 +442,7 @@ player::player(b2World& world)
 void player::apply_control()
 {
 	neck_.apply_control();
+	hip_.apply_control();
 }
 
 class goal
@@ -418,6 +487,8 @@ goal::goal(b2World& world)
 	back_shape.m_hasVertex3 = false;
 	b2FixtureDef back_def;
 	back_def.shape = &back_shape;
+	back_def.filter.categoryBits = entity::goal;
+	back_def.filter.maskBits = std::numeric_limits<entity::type>::max();
 	back_net_ = body_->CreateFixture(&back_def);
 
 	std::array<b2Vec2, 2> left_vertices;
@@ -429,6 +500,8 @@ goal::goal(b2World& world)
 	left_shape.m_hasVertex3 = false;
 	b2FixtureDef left_net_def;
 	left_net_def.shape = &left_shape;
+	left_net_def.filter.categoryBits = entity::goal;
+	left_net_def.filter.maskBits = std::numeric_limits<entity::type>::max();
 	left_net_ = body_->CreateFixture(&left_net_def);
 
 	std::array<b2Vec2, 2> right_vertices;
@@ -440,6 +513,8 @@ goal::goal(b2World& world)
 	right_shape.m_hasVertex3 = false;
 	b2FixtureDef right_net_def;
 	right_net_def.shape = &right_shape;
+	right_net_def.filter.categoryBits = entity::goal;
+	right_net_def.filter.maskBits = std::numeric_limits<entity::type>::max();
 	right_net_ = body_->CreateFixture(&right_net_def);
 
 	b2CircleShape left_post;
@@ -447,6 +522,8 @@ goal::goal(b2World& world)
 	left_post.m_radius = 0.5;
 	b2FixtureDef left_post_def;
 	left_post_def.shape = &left_post;
+	left_post_def.filter.categoryBits = entity::goal;
+	left_post_def.filter.maskBits = std::numeric_limits<entity::type>::max();
 	left_post_ = body_->CreateFixture(&left_post_def);
 
 	b2CircleShape right_post;
@@ -454,6 +531,8 @@ goal::goal(b2World& world)
 	right_post.m_radius = 0.5;
 	b2FixtureDef right_post_def;
 	right_post_def.shape = &right_post;
+	right_post_def.filter.categoryBits = entity::goal;
+	right_post_def.filter.maskBits = std::numeric_limits<entity::type>::max();
 	right_post_ = body_->CreateFixture(&right_post_def);
 
 	std::array<b2Vec2, 4> sensor_vertices;
@@ -466,6 +545,8 @@ goal::goal(b2World& world)
 	b2FixtureDef sensor_def;
 	sensor_def.shape = &sensor_box;
 	sensor_def.isSensor = true;
+	sensor_def.filter.categoryBits = entity::goal_sensor;
+	sensor_def.filter.maskBits = entity::ball;
 	sensor_ = body_->CreateFixture(&sensor_def);
 }
 
@@ -497,7 +578,7 @@ Football::Football()
 	:
 		Test(),
 		ball_(*m_world),
-		player1_(*m_world),
+		player1_(*m_world, 1),
 		left_goal_(*m_world)
 {
 	m_world->SetGravity(b2Vec2(0, 0));
@@ -507,6 +588,10 @@ void Football::Step(Settings* settings)
 {
 	Test::Step(settings);
 	g_debugDraw.DrawString(5, m_textLine, "Player head angle: %3.2f", player1_.get_head_angle() * rad2deg);
+	m_textLine += DRAW_STRING_NEW_LINE;
+	g_debugDraw.DrawString(5, m_textLine, "Player foot translation: %3.2f", player1_.get_foot_translation());
+	m_textLine += DRAW_STRING_NEW_LINE;
+	g_debugDraw.DrawString(5, m_textLine, "Player foot speed: %3.2f", player1_.get_foot_speed());
 	m_textLine += DRAW_STRING_NEW_LINE;
 	player1_.apply_control();
 }
@@ -520,6 +605,12 @@ void Football::Keyboard(int key)
 			break;
 		case GLFW_KEY_E:
 			player1_.turn_head(-200);
+			break;
+		case GLFW_KEY_3:
+			player1_.move_foot(5000);
+			break;
+		case GLFW_KEY_1:
+			player1_.move_foot(-5000);
 			break;
 	}
 }
