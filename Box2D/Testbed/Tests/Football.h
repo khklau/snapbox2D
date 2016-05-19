@@ -188,6 +188,7 @@ head::head(b2World& world, std::uint8_t id, std::size_t vision_radius, std::size
 	arc1.Set(vertices1.data(), vertices1.max_size());
 	b2FixtureDef vision1_fix_def;
 	vision1_fix_def.shape = &arc1;
+	vision1_fix_def.density = 0;
 	vision1_fix_def.isSensor = true;
 	vision1_fix_def.filter.categoryBits = entity::player_sensor;
 	vision1_fix_def.filter.maskBits = std::numeric_limits<entity::type>::max();
@@ -205,11 +206,17 @@ head::head(b2World& world, std::uint8_t id, std::size_t vision_radius, std::size
 	arc2.Set(vertices2.data(), vertices2.max_size());
 	b2FixtureDef vision2_fix_def;
 	vision2_fix_def.shape = &arc2;
+	vision2_fix_def.density = 0;
 	vision2_fix_def.isSensor = true;
 	vision2_fix_def.filter.categoryBits = entity::player_sensor;
 	vision2_fix_def.filter.maskBits = std::numeric_limits<entity::type>::max();
 	vision2_fix_def.filter.groupIndex = id * -1;
 	vision2_fixture_ = body_->CreateFixture(&vision2_fix_def);
+
+	b2MassData mass;
+	body_->GetMassData(&mass);
+	mass.I = 1.0f;
+	body_->SetMassData(&mass);
 }
 
 head::~head() noexcept
@@ -288,17 +295,20 @@ public:
 	void apply_control();
 	void turn(std::int16_t velocity);
 	inline float get_head_angle() const { return joint_->GetBodyB()->GetAngle(); };
+	inline float get_head_velocity() const { return joint_->GetBodyB()->GetAngularVelocity(); }
 private:
 	inline b2Body& get_torso_body() { return *(joint_->GetBodyA()); }
 	inline b2Body& get_head_body() { return *(joint_->GetBodyB()); }
 	b2World& world_;
 	b2RevoluteJoint* joint_;
+	std::int16_t velocity_;
 };
 
 neck::neck(b2World& world, torso& torso, head& head)
 	:
 		world_(world),
-		joint_(nullptr)
+		joint_(nullptr),
+		velocity_(0)
 {
 	b2RevoluteJointDef joint_def;
 	joint_def.bodyA = &torso.get_body(torso_key());
@@ -326,21 +336,34 @@ neck::~neck() noexcept
 
 void neck::apply_control()
 {
-	if (get_head_body().GetAngle() >= joint_->GetUpperLimit())
+	if (velocity_ != 0 && (get_head_body().GetAngle() >= joint_->GetUpperLimit() ||
+			get_head_body().GetAngle() <= joint_->GetLowerLimit()))
 	{
-		get_head_body().SetAngularVelocity(0.0);
-		get_head_body().SetTransform(get_head_body().GetPosition(), joint_->GetUpperLimit());
+		velocity_ = 0;
+		get_head_body().ApplyAngularImpulse(get_head_body().GetAngularVelocity() * -1, true);
 	}
-	else if (get_head_body().GetAngle() <= joint_->GetLowerLimit())
+	else if (velocity_ != 0)
 	{
-		get_head_body().SetAngularVelocity(0.0);
-		get_head_body().SetTransform(get_head_body().GetPosition(), joint_->GetLowerLimit());
+		get_head_body().ApplyAngularImpulse(velocity_ / 1000.0, true);
+	}
+	else if (velocity_ == 0)
+	{
+		// correct over-rotation
+		if (get_head_body().GetAngle() > joint_->GetUpperLimit())
+		{
+			get_head_body().SetTransform(get_head_body().GetPosition(), joint_->GetUpperLimit());
+		}
+		else if (get_head_body().GetAngle() < joint_->GetLowerLimit())
+		{
+			get_head_body().SetTransform(get_head_body().GetPosition(), joint_->GetLowerLimit());
+		}
 	}
 }
 
 void neck::turn(std::int16_t velocity)
 {
-	get_head_body().SetAngularVelocity(velocity / 1000.0);
+	velocity_ = velocity;
+	get_head_body().ApplyAngularImpulse(velocity_ / 1000.0, true);
 }
 
 class hip
@@ -418,6 +441,7 @@ public:
 	inline void turn_head(std::int16_t velocity) { neck_.turn(velocity); }
 	inline void move_foot(std::int16_t velocity) { hip_.move(velocity); }
 	inline float get_head_angle() const { return neck_.get_head_angle(); }
+	inline float get_head_velocity() const { return neck_.get_head_velocity(); }
 	inline float get_foot_translation() const { return hip_.get_foot_translation(); }
 	inline float get_foot_speed() const { return hip_.get_foot_speed(); }
 private:
@@ -544,6 +568,7 @@ goal::goal(b2World& world)
 	sensor_box.Set(sensor_vertices.data(), sensor_vertices.max_size());
 	b2FixtureDef sensor_def;
 	sensor_def.shape = &sensor_box;
+	sensor_def.density = 0;
 	sensor_def.isSensor = true;
 	sensor_def.filter.categoryBits = entity::goal_sensor;
 	sensor_def.filter.maskBits = entity::ball;
@@ -589,6 +614,8 @@ void Football::Step(Settings* settings)
 	Test::Step(settings);
 	g_debugDraw.DrawString(5, m_textLine, "Player head angle: %3.2f", player1_.get_head_angle() * rad2deg);
 	m_textLine += DRAW_STRING_NEW_LINE;
+	g_debugDraw.DrawString(5, m_textLine, "Player head velocity: %3.2f", player1_.get_head_velocity());
+	m_textLine += DRAW_STRING_NEW_LINE;
 	g_debugDraw.DrawString(5, m_textLine, "Player foot translation: %3.2f", player1_.get_foot_translation());
 	m_textLine += DRAW_STRING_NEW_LINE;
 	g_debugDraw.DrawString(5, m_textLine, "Player foot speed: %3.2f", player1_.get_foot_speed());
@@ -601,10 +628,10 @@ void Football::Keyboard(int key)
 	switch (key)
 	{
 		case GLFW_KEY_Q:
-			player1_.turn_head(200);
+			player1_.turn_head(20);
 			break;
 		case GLFW_KEY_E:
-			player1_.turn_head(-200);
+			player1_.turn_head(-20);
 			break;
 		case GLFW_KEY_3:
 			player1_.move_foot(5000);
