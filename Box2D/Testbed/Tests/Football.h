@@ -303,7 +303,6 @@ class neck
 public:
 	neck(b2World& world, torso& torso, head& head);
 	~neck() noexcept;
-	void apply_control();
 	void turn(std::int16_t velocity);
 	inline float get_head_angle() const { return joint_->GetBodyB()->GetAngle(); };
 	inline float get_head_velocity() const { return joint_->GetBodyB()->GetAngularVelocity(); }
@@ -345,10 +344,6 @@ neck::~neck() noexcept
 	}
 }
 
-void neck::apply_control()
-{
-}
-
 void neck::turn(std::int16_t velocity)
 {
 	velocity_ = velocity;
@@ -360,7 +355,6 @@ class hip
 public:
 	hip(b2World& world, torso& torso, foot& foot);
 	~hip() noexcept;
-	void apply_control();
 	void move(std::int16_t velocity);
 	void turn(std::int16_t velocity);
 	inline float get_torso_angle() const { return joint_->GetBodyA()->GetAngle(); }
@@ -407,24 +401,13 @@ hip::~hip() noexcept
 	}
 }
 
-void hip::apply_control()
-{
-	if (foot_velocity_ != 0 && (get_foot_translation() >= joint_->GetUpperLimit() ||
-			get_foot_translation() <= joint_->GetLowerLimit()))
-	{
-		foot_velocity_ = 0;
-		get_foot_body().ApplyLinearImpulse(b2Vec2(get_foot_speed() * -1, 0), get_foot_body().GetWorldCenter(), true);
-	}
-	else if (foot_velocity_ != 0)
-	{
-		get_foot_body().ApplyLinearImpulse(b2Vec2(foot_velocity_ / 1000.0, 0), get_foot_body().GetWorldCenter(), true);
-	}
-}
-
 void hip::move(std::int16_t velocity)
 {
 	foot_velocity_ = velocity;
-	get_foot_body().ApplyLinearImpulse(b2Vec2(foot_velocity_ / 1000.0, 0), get_foot_body().GetWorldCenter(), true);
+	b2Vec2 target(0, 0);
+	target.x = foot_velocity_ / 1000.0 * cosf(get_torso_angle());
+	target.y = foot_velocity_ / 1000.0 * sinf(get_torso_angle());
+	get_foot_body().ApplyLinearImpulse(target, get_foot_body().GetWorldCenter(), true);
 }
 
 void hip::turn(std::int16_t velocity)
@@ -438,7 +421,6 @@ class player
 {
 public:
 	player(b2World& world, std::uint8_t id);
-	void apply_control();
 	inline void turn_head(std::int16_t velocity) { neck_.turn(velocity); }
 	inline void turn_torso(std::int16_t velocity) { hip_.turn(velocity); }
 	inline void move_foot(std::int16_t velocity) { hip_.move(velocity); }
@@ -466,12 +448,6 @@ player::player(b2World& world, std::uint8_t id)
 		neck_(world, torso_, head_),
 		hip_(world, torso_, foot_)
 {}
-
-void player::apply_control()
-{
-	neck_.apply_control();
-	hip_.apply_control();
-}
 
 class goal
 {
@@ -628,7 +604,6 @@ void Football::Step(Settings* settings)
 	m_textLine += DRAW_STRING_NEW_LINE;
 	g_debugDraw.DrawString(5, m_textLine, "Player foot speed: %3.2f", player1_.get_foot_speed());
 	m_textLine += DRAW_STRING_NEW_LINE;
-	player1_.apply_control();
 }
 
 void Football::Keyboard(int key)
@@ -648,10 +623,10 @@ void Football::Keyboard(int key)
 			player1_.turn_torso(-400);
 			break;
 		case GLFW_KEY_3:
-			player1_.move_foot(2000);
+			player1_.move_foot(3000);
 			break;
 		case GLFW_KEY_1:
-			player1_.move_foot(-2000);
+			player1_.move_foot(-3000);
 			break;
 	}
 }
