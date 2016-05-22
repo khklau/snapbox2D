@@ -115,9 +115,15 @@ torso::torso(b2World& world, std::uint8_t id)
 	fix_def.filter.categoryBits = entity::player_torso;
 	fix_def.filter.maskBits = std::numeric_limits<entity::type>::max();
 	fix_def.filter.groupIndex = id * -1;
+	fix_def.density = 4.0f;
 	body_def.position.Set(0, 0);
 	body_ = world_.CreateBody(&body_def);
 	fixture_ = body_->CreateFixture(&fix_def);
+
+	b2MassData mass;
+	body_->GetMassData(&mass);
+	mass.I = 1.0f;
+	body_->SetMassData(&mass);
 }
 
 torso::~torso() noexcept
@@ -274,6 +280,11 @@ foot::foot(b2World& world, std::uint8_t id)
 	body_def.position.Set(0, 0);
 	body_ = world_.CreateBody(&body_def);
 	fixture_ = body_->CreateFixture(&fix_def);
+	
+	b2MassData mass;
+	body_->GetMassData(&mass);
+	mass.I = 1.0f;
+	body_->SetMassData(&mass);
 }
 
 foot::~foot() noexcept
@@ -336,28 +347,6 @@ neck::~neck() noexcept
 
 void neck::apply_control()
 {
-	if (velocity_ != 0 && (get_head_body().GetAngle() >= joint_->GetUpperLimit() ||
-			get_head_body().GetAngle() <= joint_->GetLowerLimit()))
-	{
-		velocity_ = 0;
-		get_head_body().ApplyAngularImpulse(get_head_body().GetAngularVelocity() * -1, true);
-	}
-	else if (velocity_ != 0)
-	{
-		get_head_body().ApplyAngularImpulse(velocity_ / 1000.0, true);
-	}
-	else if (velocity_ == 0)
-	{
-		// correct over-rotation
-		if (get_head_body().GetAngle() > joint_->GetUpperLimit())
-		{
-			get_head_body().SetTransform(get_head_body().GetPosition(), joint_->GetUpperLimit());
-		}
-		else if (get_head_body().GetAngle() < joint_->GetLowerLimit())
-		{
-			get_head_body().SetTransform(get_head_body().GetPosition(), joint_->GetLowerLimit());
-		}
-	}
 }
 
 void neck::turn(std::int16_t velocity)
@@ -373,6 +362,9 @@ public:
 	~hip() noexcept;
 	void apply_control();
 	void move(std::int16_t velocity);
+	void turn(std::int16_t velocity);
+	inline float get_torso_angle() const { return joint_->GetBodyA()->GetAngle(); }
+	inline float get_torso_angular_velocity() const { return joint_->GetBodyA()->GetAngularVelocity(); }
 	inline float get_foot_translation() const { return joint_->GetJointTranslation(); }
 	inline float get_foot_speed() const { return joint_->GetJointSpeed(); }
 private:
@@ -380,14 +372,16 @@ private:
 	inline b2Body& get_foot_body() { return *(joint_->GetBodyB()); }
 	b2World& world_;
 	b2PrismaticJoint* joint_;
-	std::int16_t velocity_;
+	std::int16_t torso_angular_velocity_;
+	std::int16_t foot_velocity_;
 };
 
 hip::hip(b2World& world, torso& torso, foot& foot)
 	:
 		world_(world),
 		joint_(nullptr),
-		velocity_(0)
+		torso_angular_velocity_(0),
+		foot_velocity_(0)
 {
 	b2PrismaticJointDef joint_def;
 	joint_def.bodyA = &torso.get_body(torso_key());
@@ -415,22 +409,29 @@ hip::~hip() noexcept
 
 void hip::apply_control()
 {
-	if (velocity_ != 0 && (get_foot_translation() >= joint_->GetUpperLimit() ||
+	if (foot_velocity_ != 0 && (get_foot_translation() >= joint_->GetUpperLimit() ||
 			get_foot_translation() <= joint_->GetLowerLimit()))
 	{
-		velocity_ = 0;
+		foot_velocity_ = 0;
 		get_foot_body().ApplyLinearImpulse(b2Vec2(get_foot_speed() * -1, 0), get_foot_body().GetWorldCenter(), true);
 	}
-	else if (velocity_ != 0)
+	else if (foot_velocity_ != 0)
 	{
-		get_foot_body().ApplyLinearImpulse(b2Vec2(velocity_ / 1000.0, 0), get_foot_body().GetWorldCenter(), true);
+		get_foot_body().ApplyLinearImpulse(b2Vec2(foot_velocity_ / 1000.0, 0), get_foot_body().GetWorldCenter(), true);
 	}
 }
 
 void hip::move(std::int16_t velocity)
 {
-	velocity_ = velocity;
-	get_foot_body().ApplyLinearImpulse(b2Vec2(velocity_ / 1000.0, 0), get_foot_body().GetWorldCenter(), true);
+	foot_velocity_ = velocity;
+	get_foot_body().ApplyLinearImpulse(b2Vec2(foot_velocity_ / 1000.0, 0), get_foot_body().GetWorldCenter(), true);
+}
+
+void hip::turn(std::int16_t velocity)
+{
+	torso_angular_velocity_ = velocity;
+	get_torso_body().ApplyAngularImpulse(torso_angular_velocity_ / 1000.0, true);
+	get_foot_body().ApplyAngularImpulse(torso_angular_velocity_ / 1000.0, true);
 }
 
 class player
@@ -439,9 +440,12 @@ public:
 	player(b2World& world, std::uint8_t id);
 	void apply_control();
 	inline void turn_head(std::int16_t velocity) { neck_.turn(velocity); }
+	inline void turn_torso(std::int16_t velocity) { hip_.turn(velocity); }
 	inline void move_foot(std::int16_t velocity) { hip_.move(velocity); }
 	inline float get_head_angle() const { return neck_.get_head_angle(); }
 	inline float get_head_velocity() const { return neck_.get_head_velocity(); }
+	inline float get_torso_angle() const { return hip_.get_torso_angle(); }
+	inline float get_torso_angular_velocity() const { return hip_.get_torso_angular_velocity(); }
 	inline float get_foot_translation() const { return hip_.get_foot_translation(); }
 	inline float get_foot_speed() const { return hip_.get_foot_speed(); }
 private:
@@ -616,6 +620,10 @@ void Football::Step(Settings* settings)
 	m_textLine += DRAW_STRING_NEW_LINE;
 	g_debugDraw.DrawString(5, m_textLine, "Player head velocity: %3.2f", player1_.get_head_velocity());
 	m_textLine += DRAW_STRING_NEW_LINE;
+	g_debugDraw.DrawString(5, m_textLine, "Player torso angle: %3.2f", player1_.get_torso_angle() * rad2deg);
+	m_textLine += DRAW_STRING_NEW_LINE;
+	g_debugDraw.DrawString(5, m_textLine, "Player torso angular velocity: %3.2f", player1_.get_torso_angular_velocity());
+	m_textLine += DRAW_STRING_NEW_LINE;
 	g_debugDraw.DrawString(5, m_textLine, "Player foot translation: %3.2f", player1_.get_foot_translation());
 	m_textLine += DRAW_STRING_NEW_LINE;
 	g_debugDraw.DrawString(5, m_textLine, "Player foot speed: %3.2f", player1_.get_foot_speed());
@@ -628,16 +636,22 @@ void Football::Keyboard(int key)
 	switch (key)
 	{
 		case GLFW_KEY_Q:
-			player1_.turn_head(20);
+			player1_.turn_head(200);
 			break;
 		case GLFW_KEY_E:
-			player1_.turn_head(-20);
+			player1_.turn_head(-200);
+			break;
+		case GLFW_KEY_A:
+			player1_.turn_torso(400);
+			break;
+		case GLFW_KEY_D:
+			player1_.turn_torso(-400);
 			break;
 		case GLFW_KEY_3:
-			player1_.move_foot(5000);
+			player1_.move_foot(2000);
 			break;
 		case GLFW_KEY_1:
-			player1_.move_foot(-5000);
+			player1_.move_foot(-2000);
 			break;
 	}
 }
