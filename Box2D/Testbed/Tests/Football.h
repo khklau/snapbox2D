@@ -3,6 +3,7 @@
 
 #include <array>
 #include <limits>
+#include <type_traits>
 #include "../Framework/Test.h"
 #include "../Box2D/Box2D/Dynamics/b2World.h"
 #include "../Box2D/Box2D/Collision/Shapes/b2CircleShape.h"
@@ -14,7 +15,7 @@ namespace entity
 {
 	enum type : std::uint16_t
 	{
-		ball = 0,
+		ball = 2,
 		goal,
 		goal_sensor,
 		player_torso,
@@ -46,6 +47,8 @@ ball::ball(b2World& world)
 	body_def.type = b2_dynamicBody;
 	body_def.position.Set(0, 20);
 	body_def.angle = 0 * deg2rad;
+	body_def.linearDamping = 0.15f;
+	body_def.angularDamping = 0.15f;
 	body_ = world_.CreateBody(&body_def);
 
 	b2CircleShape circle;
@@ -54,7 +57,7 @@ ball::ball(b2World& world)
 	b2FixtureDef fix_def;
 	fix_def.shape = &circle;
 	fix_def.filter.categoryBits = entity::ball;
-	fix_def.filter.maskBits = std::numeric_limits<entity::type>::max();
+	fix_def.filter.maskBits = std::numeric_limits<std::underlying_type<entity::type>::type>::max();
 	fixture_ = body_->CreateFixture(&fix_def);
 }
 
@@ -97,6 +100,8 @@ torso::torso(b2World& world, std::uint8_t id)
 	body_def.type = b2_dynamicBody;
 	body_def.position.Set(10, 10);
 	body_def.angle = 0 * deg2rad;
+	body_def.linearDamping = 0.15f;
+	body_def.angularDamping = 0.15f;
 	body_ = world_.CreateBody(&body_def);
 
 	std::array<b2Vec2, 8> vertices;
@@ -113,7 +118,7 @@ torso::torso(b2World& world, std::uint8_t id)
 	b2FixtureDef fix_def;
 	fix_def.shape = &poly;
 	fix_def.filter.categoryBits = entity::player_torso;
-	fix_def.filter.maskBits = std::numeric_limits<entity::type>::max();
+	fix_def.filter.maskBits = std::numeric_limits<std::underlying_type<entity::type>::type>::max();
 	fix_def.filter.groupIndex = id * -1;
 	fix_def.density = 4.0f;
 	body_def.position.Set(0, 0);
@@ -168,6 +173,8 @@ head::head(b2World& world, std::uint8_t id, std::size_t vision_radius, std::size
 	body_def.type = b2_dynamicBody;
 	body_def.position.Set(0, 0);
 	body_def.angle = 0 * deg2rad;
+	body_def.linearDamping = 0.15f;
+	body_def.angularDamping = 0.15f;
 	body_ = world_.CreateBody(&body_def);
 
 	b2CircleShape circle;
@@ -175,7 +182,7 @@ head::head(b2World& world, std::uint8_t id, std::size_t vision_radius, std::size
 	circle.m_radius = 1;
 	b2FixtureDef head_fix_def;
 	head_fix_def.filter.categoryBits = entity::player_head;
-	head_fix_def.filter.maskBits = std::numeric_limits<entity::type>::max();
+	head_fix_def.filter.maskBits = std::numeric_limits<std::underlying_type<entity::type>::type>::max();
 	head_fix_def.filter.groupIndex = id * -1;
 	head_fix_def.shape = &circle;
 
@@ -197,7 +204,7 @@ head::head(b2World& world, std::uint8_t id, std::size_t vision_radius, std::size
 	vision1_fix_def.density = 0;
 	vision1_fix_def.isSensor = true;
 	vision1_fix_def.filter.categoryBits = entity::player_sensor;
-	vision1_fix_def.filter.maskBits = std::numeric_limits<entity::type>::max();
+	vision1_fix_def.filter.maskBits = std::numeric_limits<std::underlying_type<entity::type>::type>::max();
 	vision1_fix_def.filter.groupIndex = id * -1;
 	vision1_fixture_ = body_->CreateFixture(&vision1_fix_def);
 
@@ -215,7 +222,7 @@ head::head(b2World& world, std::uint8_t id, std::size_t vision_radius, std::size
 	vision2_fix_def.density = 0;
 	vision2_fix_def.isSensor = true;
 	vision2_fix_def.filter.categoryBits = entity::player_sensor;
-	vision2_fix_def.filter.maskBits = std::numeric_limits<entity::type>::max();
+	vision2_fix_def.filter.maskBits = std::numeric_limits<std::underlying_type<entity::type>::type>::max();
 	vision2_fix_def.filter.groupIndex = id * -1;
 	vision2_fixture_ = body_->CreateFixture(&vision2_fix_def);
 
@@ -263,6 +270,8 @@ foot::foot(b2World& world, std::uint8_t id)
 	body_def.type = b2_dynamicBody;
 	body_def.position.Set(10, 10);
 	body_def.angle = 0 * deg2rad;
+	body_def.linearDamping = 0.15f;
+	body_def.angularDamping = 0.15f;
 	body_ = world_.CreateBody(&body_def);
 
 	std::array<b2Vec2, 4> vertices;
@@ -275,7 +284,7 @@ foot::foot(b2World& world, std::uint8_t id)
 	b2FixtureDef fix_def;
 	fix_def.shape = &poly;
 	fix_def.filter.categoryBits = entity::player_foot;
-	fix_def.filter.maskBits = std::numeric_limits<entity::type>::max();
+	fix_def.filter.maskBits = std::numeric_limits<std::underlying_type<entity::type>::type>::max();
 	fix_def.filter.groupIndex = id * -1;
 	body_def.position.Set(0, 0);
 	body_ = world_.CreateBody(&body_def);
@@ -303,9 +312,12 @@ class neck
 public:
 	neck(b2World& world, torso& torso, head& head);
 	~neck() noexcept;
+	void run(std::int16_t velocity);
 	void turn(std::int16_t velocity);
 	inline float get_head_angle() const { return joint_->GetBodyB()->GetAngle(); };
 	inline float get_head_velocity() const { return joint_->GetBodyB()->GetAngularVelocity(); }
+	inline float get_torso_angle() const { return joint_->GetBodyA()->GetAngle(); };
+	inline float get_torso_velocity() const { return joint_->GetBodyA()->GetAngularVelocity(); }
 private:
 	inline b2Body& get_torso_body() { return *(joint_->GetBodyA()); }
 	inline b2Body& get_head_body() { return *(joint_->GetBodyB()); }
@@ -344,6 +356,14 @@ neck::~neck() noexcept
 	}
 }
 
+void neck::run(std::int16_t velocity)
+{
+	b2Vec2 target(0, 0);
+	target.x = velocity / 1000.0 * cosf(get_torso_angle());
+	target.y = velocity / 1000.0 * sinf(get_torso_angle());
+	get_head_body().ApplyLinearImpulse(target, get_head_body().GetWorldCenter(), true);
+}
+
 void neck::turn(std::int16_t velocity)
 {
 	velocity_ = velocity;
@@ -355,7 +375,8 @@ class hip
 public:
 	hip(b2World& world, torso& torso, foot& foot);
 	~hip() noexcept;
-	void move(std::int16_t velocity);
+	void kick(std::int16_t velocity);
+	void run(std::int16_t velocity);
 	void turn(std::int16_t velocity);
 	inline float get_torso_angle() const { return joint_->GetBodyA()->GetAngle(); }
 	inline float get_torso_angular_velocity() const { return joint_->GetBodyA()->GetAngularVelocity(); }
@@ -401,13 +422,21 @@ hip::~hip() noexcept
 	}
 }
 
-void hip::move(std::int16_t velocity)
+void hip::kick(std::int16_t velocity)
 {
 	foot_velocity_ = velocity;
 	b2Vec2 target(0, 0);
 	target.x = foot_velocity_ / 1000.0 * cosf(get_torso_angle());
 	target.y = foot_velocity_ / 1000.0 * sinf(get_torso_angle());
 	get_foot_body().ApplyLinearImpulse(target, get_foot_body().GetWorldCenter(), true);
+}
+
+void hip::run(std::int16_t velocity)
+{
+	b2Vec2 target(0, 0);
+	target.x = velocity / 1000.0 * cosf(get_torso_angle());
+	target.y = velocity / 1000.0 * sinf(get_torso_angle());
+	get_torso_body().ApplyLinearImpulse(target, get_torso_body().GetWorldCenter(), true);
 }
 
 void hip::turn(std::int16_t velocity)
@@ -421,9 +450,10 @@ class player
 {
 public:
 	player(b2World& world, std::uint8_t id);
+	inline void run(std::int16_t velocity) { neck_.run(velocity); hip_.run(velocity); }
 	inline void turn_head(std::int16_t velocity) { neck_.turn(velocity); }
 	inline void turn_torso(std::int16_t velocity) { hip_.turn(velocity); }
-	inline void move_foot(std::int16_t velocity) { hip_.move(velocity); }
+	inline void kick(std::int16_t velocity) { hip_.kick(velocity); }
 	inline float get_head_angle() const { return neck_.get_head_angle(); }
 	inline float get_head_velocity() const { return neck_.get_head_velocity(); }
 	inline float get_torso_angle() const { return hip_.get_torso_angle(); }
@@ -492,7 +522,7 @@ goal::goal(b2World& world)
 	b2FixtureDef back_def;
 	back_def.shape = &back_shape;
 	back_def.filter.categoryBits = entity::goal;
-	back_def.filter.maskBits = std::numeric_limits<entity::type>::max();
+	back_def.filter.maskBits = std::numeric_limits<std::underlying_type<entity::type>::type>::max();
 	back_net_ = body_->CreateFixture(&back_def);
 
 	std::array<b2Vec2, 2> left_vertices;
@@ -505,7 +535,7 @@ goal::goal(b2World& world)
 	b2FixtureDef left_net_def;
 	left_net_def.shape = &left_shape;
 	left_net_def.filter.categoryBits = entity::goal;
-	left_net_def.filter.maskBits = std::numeric_limits<entity::type>::max();
+	left_net_def.filter.maskBits = std::numeric_limits<std::underlying_type<entity::type>::type>::max();
 	left_net_ = body_->CreateFixture(&left_net_def);
 
 	std::array<b2Vec2, 2> right_vertices;
@@ -518,7 +548,7 @@ goal::goal(b2World& world)
 	b2FixtureDef right_net_def;
 	right_net_def.shape = &right_shape;
 	right_net_def.filter.categoryBits = entity::goal;
-	right_net_def.filter.maskBits = std::numeric_limits<entity::type>::max();
+	right_net_def.filter.maskBits = std::numeric_limits<std::underlying_type<entity::type>::type>::max();
 	right_net_ = body_->CreateFixture(&right_net_def);
 
 	b2CircleShape left_post;
@@ -527,7 +557,7 @@ goal::goal(b2World& world)
 	b2FixtureDef left_post_def;
 	left_post_def.shape = &left_post;
 	left_post_def.filter.categoryBits = entity::goal;
-	left_post_def.filter.maskBits = std::numeric_limits<entity::type>::max();
+	left_post_def.filter.maskBits = std::numeric_limits<std::underlying_type<entity::type>::type>::max();
 	left_post_ = body_->CreateFixture(&left_post_def);
 
 	b2CircleShape right_post;
@@ -536,7 +566,7 @@ goal::goal(b2World& world)
 	b2FixtureDef right_post_def;
 	right_post_def.shape = &right_post;
 	right_post_def.filter.categoryBits = entity::goal;
-	right_post_def.filter.maskBits = std::numeric_limits<entity::type>::max();
+	right_post_def.filter.maskBits = std::numeric_limits<std::underlying_type<entity::type>::type>::max();
 	right_post_ = body_->CreateFixture(&right_post_def);
 
 	std::array<b2Vec2, 4> sensor_vertices;
@@ -611,22 +641,28 @@ void Football::Keyboard(int key)
 	switch (key)
 	{
 		case GLFW_KEY_Q:
-			player1_.turn_head(200);
+			player1_.turn_head(100);
 			break;
 		case GLFW_KEY_E:
-			player1_.turn_head(-200);
+			player1_.turn_head(-100);
+			break;
+		case GLFW_KEY_W:
+			player1_.run(8000);
+			break;
+		case GLFW_KEY_S:
+			player1_.run(-8000);
 			break;
 		case GLFW_KEY_A:
-			player1_.turn_torso(400);
+			player1_.turn_torso(200);
 			break;
 		case GLFW_KEY_D:
-			player1_.turn_torso(-400);
+			player1_.turn_torso(-200);
 			break;
 		case GLFW_KEY_3:
-			player1_.move_foot(3000);
+			player1_.kick(8000);
 			break;
 		case GLFW_KEY_1:
-			player1_.move_foot(-3000);
+			player1_.kick(-8000);
 			break;
 	}
 }
