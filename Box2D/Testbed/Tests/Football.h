@@ -433,10 +433,15 @@ void hip::kick(std::int16_t velocity)
 
 void hip::run(std::int16_t velocity)
 {
+	std::int16_t final_velocity = (velocity < 0) ? velocity / 25 : velocity;
 	b2Vec2 target(0, 0);
-	target.x = velocity / 1000.0 * cosf(get_torso_angle());
-	target.y = velocity / 1000.0 * sinf(get_torso_angle());
+	target.x = final_velocity / 1000.0 * cosf(get_torso_angle());
+	target.y = final_velocity / 1000.0 * sinf(get_torso_angle());
 	get_torso_body().ApplyLinearImpulse(target, get_torso_body().GetWorldCenter(), true);
+	if (velocity < 0)
+	{
+		get_foot_body().ApplyLinearImpulse(target, get_foot_body().GetWorldCenter(), true);
+	}
 }
 
 void hip::turn(std::int16_t velocity)
@@ -596,6 +601,51 @@ goal::~goal() noexcept
 	}
 }
 
+class field_sensor
+{
+public:
+	explicit field_sensor(b2World& world);
+	~field_sensor() noexcept;
+private:
+	b2World& world_;
+	b2Body* body_;
+	b2Fixture* fixture_;
+};
+
+field_sensor::field_sensor(b2World& world)
+	:
+		world_(world),
+		body_(nullptr),
+		fixture_(nullptr)
+{
+	b2BodyDef body_def;
+	body_def.type = b2_staticBody;
+	body_def.position.Set(0, 10);
+	body_def.angle = 0;
+	body_ = world_.CreateBody(&body_def);
+
+	b2CircleShape sensor;
+	sensor.m_p.Set(0.0, 0.0);
+	sensor.m_radius = 0.5;
+	b2FixtureDef fixture_def;
+	fixture_def.shape = &sensor;
+	fixture_def.isSensor = true;
+	fixture_def.filter.categoryBits = entity::field_sensor;
+	fixture_def.filter.maskBits = entity::player_sensor;
+	fixture_ = body_->CreateFixture(&fixture_def);
+}
+
+field_sensor::~field_sensor() noexcept
+{
+	try
+	{
+	}
+	catch (...)
+	{
+		// do nothing
+	}
+}
+
 class Football : public Test
 {
 public:
@@ -607,6 +657,7 @@ private:
 	ball ball_;
 	player player1_;
 	goal left_goal_;
+	field_sensor sensor1_;
 };
 
 Football::Football()
@@ -614,7 +665,8 @@ Football::Football()
 		Test(),
 		ball_(*m_world),
 		player1_(*m_world, 1),
-		left_goal_(*m_world)
+		left_goal_(*m_world),
+		sensor1_(*m_world)
 {
 	m_world->SetGravity(b2Vec2(0, 0));
 }
