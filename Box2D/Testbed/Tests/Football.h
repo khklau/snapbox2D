@@ -7,6 +7,7 @@
 #include "../Framework/Test.h"
 #include "../Box2D/Box2D/Dynamics/b2World.h"
 #include "../Box2D/Box2D/Collision/Shapes/b2CircleShape.h"
+#include "../Box2D/Box2D/Dynamics/b2WorldCallbacks.h"
 
 static const float deg2rad = 0.0174532925199432957f;
 static const float rad2deg = 57.295779513082320876f;
@@ -16,7 +17,9 @@ namespace entity
 	enum type : std::uint16_t
 	{
 		ball = 2,
-		goal,
+		goal_left_post,
+		goal_right_post,
+		goal_net,
 		goal_sensor,
 		player_torso,
 		player_foot,
@@ -24,6 +27,50 @@ namespace entity
 		player_sensor,
 		field_sensor
 	};
+	enum id : std::uint16_t
+	{
+		alpha_1 = 1,
+		alpha_2,
+		alpha_3,
+		alpha_4,
+		alpha_5,
+		alpha_6,
+		alpha_7,
+		alpha_8,
+		alpha_9,
+		alpha_10,
+		alpha_11,
+		beta_1,
+		beta_2,
+		beta_3,
+		beta_4,
+		beta_5,
+		beta_6,
+		beta_7,
+		beta_8,
+		beta_9,
+		beta_10,
+		beta_11,
+		the_ball,
+		left_goal,
+		right_goal,
+		center_sensor,
+		center_top_sensor,
+		center_bottom_sensor,
+		top_left_sensor,
+		bottom_left_sensor,
+		top_right_sensor,
+		bottom_right_sensor
+	};
+	void config_fixture(b2FixtureDef& def, const type& type, const id& id);
+	inline type get_type(const b2Fixture& fixture) { return static_cast<type>(fixture.GetFilterData().categoryBits); }
+	inline id get_id(const b2Fixture& fixture) { return static_cast<id>(fixture.GetFilterData().groupIndex * -1); }
+}
+
+void entity::config_fixture(b2FixtureDef& def, const type& type, const id& id)
+{
+	def.filter.categoryBits = type;
+	def.filter.groupIndex = id * -1;
 }
 
 class ball
@@ -45,7 +92,7 @@ ball::ball(b2World& world)
 {
 	b2BodyDef body_def;
 	body_def.type = b2_dynamicBody;
-	body_def.position.Set(0, 20);
+	body_def.position.Set(0, 25);
 	body_def.angle = 0 * deg2rad;
 	body_def.linearDamping = 0.15f;
 	body_def.angularDamping = 0.15f;
@@ -56,7 +103,7 @@ ball::ball(b2World& world)
 	circle.m_radius = 1;
 	b2FixtureDef fix_def;
 	fix_def.shape = &circle;
-	fix_def.filter.categoryBits = entity::ball;
+	entity::config_fixture(fix_def, entity::ball, entity::the_ball);
 	fix_def.filter.maskBits = std::numeric_limits<std::underlying_type<entity::type>::type>::max();
 	fixture_ = body_->CreateFixture(&fix_def);
 }
@@ -81,7 +128,7 @@ struct torso_key
 class torso
 {
 public:
-	torso(b2World& world, std::uint8_t id);
+	torso(b2World& world, entity::id id);
 	~torso() noexcept;
 	inline b2Body& get_body(const torso_key&) { return *body_; }
 private:
@@ -90,7 +137,7 @@ private:
 	b2Fixture* fixture_;
 };
 
-torso::torso(b2World& world, std::uint8_t id)
+torso::torso(b2World& world, entity::id id)
 	:
 		world_(world),
 		body_(nullptr),
@@ -117,9 +164,8 @@ torso::torso(b2World& world, std::uint8_t id)
 	poly.Set(vertices.data(), vertices.max_size());
 	b2FixtureDef fix_def;
 	fix_def.shape = &poly;
-	fix_def.filter.categoryBits = entity::player_torso;
+	entity::config_fixture(fix_def, entity::player_torso, id);
 	fix_def.filter.maskBits = std::numeric_limits<std::underlying_type<entity::type>::type>::max();
-	fix_def.filter.groupIndex = id * -1;
 	fix_def.density = 4.0f;
 	body_def.position.Set(0, 0);
 	body_ = world_.CreateBody(&body_def);
@@ -150,7 +196,7 @@ struct head_key
 class head
 {
 public:
-	head(b2World& world, std::uint8_t id, std::size_t vision_radius = 20U, std::size_t vision_degree = 120U);
+	head(b2World& world, entity::id id, std::size_t vision_radius = 20U, std::size_t vision_degree = 120U);
 	~head() noexcept;
 	inline b2Body& get_body(const head_key&) { return *body_; }
 private:
@@ -161,7 +207,7 @@ private:
 	b2Fixture* vision2_fixture_;
 };
 
-head::head(b2World& world, std::uint8_t id, std::size_t vision_radius, std::size_t vision_degree)
+head::head(b2World& world, entity::id id, std::size_t vision_radius, std::size_t vision_degree)
 	:
 		world_(world),
 		body_(nullptr),
@@ -181,9 +227,8 @@ head::head(b2World& world, std::uint8_t id, std::size_t vision_radius, std::size
 	circle.m_p.Set(0, 0);
 	circle.m_radius = 1;
 	b2FixtureDef head_fix_def;
-	head_fix_def.filter.categoryBits = entity::player_head;
+	entity::config_fixture(head_fix_def, entity::player_head, id);
 	head_fix_def.filter.maskBits = std::numeric_limits<std::underlying_type<entity::type>::type>::max();
-	head_fix_def.filter.groupIndex = id * -1;
 	head_fix_def.shape = &circle;
 
 	head_fixture_ = body_->CreateFixture(&head_fix_def);
@@ -203,9 +248,8 @@ head::head(b2World& world, std::uint8_t id, std::size_t vision_radius, std::size
 	vision1_fix_def.shape = &arc1;
 	vision1_fix_def.density = 0;
 	vision1_fix_def.isSensor = true;
-	vision1_fix_def.filter.categoryBits = entity::player_sensor;
+	entity::config_fixture(vision1_fix_def, entity::player_sensor, id);
 	vision1_fix_def.filter.maskBits = std::numeric_limits<std::underlying_type<entity::type>::type>::max();
-	vision1_fix_def.filter.groupIndex = id * -1;
 	vision1_fixture_ = body_->CreateFixture(&vision1_fix_def);
 
 	b2PolygonShape arc2;
@@ -221,9 +265,8 @@ head::head(b2World& world, std::uint8_t id, std::size_t vision_radius, std::size
 	vision2_fix_def.shape = &arc2;
 	vision2_fix_def.density = 0;
 	vision2_fix_def.isSensor = true;
-	vision2_fix_def.filter.categoryBits = entity::player_sensor;
+	entity::config_fixture(vision2_fix_def, entity::player_sensor, id);
 	vision2_fix_def.filter.maskBits = std::numeric_limits<std::underlying_type<entity::type>::type>::max();
-	vision2_fix_def.filter.groupIndex = id * -1;
 	vision2_fixture_ = body_->CreateFixture(&vision2_fix_def);
 
 	b2MassData mass;
@@ -251,7 +294,7 @@ struct foot_key
 class foot
 {
 public:
-	foot(b2World& world, std::uint8_t id);
+	foot(b2World& world, entity::id id);
 	~foot() noexcept;
 	inline b2Body& get_body(const foot_key&) { return *body_; }
 private:
@@ -260,7 +303,7 @@ private:
 	b2Fixture* fixture_;
 };
 
-foot::foot(b2World& world, std::uint8_t id)
+foot::foot(b2World& world, entity::id id)
 	:
 		world_(world),
 		body_(nullptr),
@@ -283,9 +326,8 @@ foot::foot(b2World& world, std::uint8_t id)
 	poly.Set(vertices.data(), vertices.max_size());
 	b2FixtureDef fix_def;
 	fix_def.shape = &poly;
-	fix_def.filter.categoryBits = entity::player_foot;
+	entity::config_fixture(fix_def, entity::player_foot, id);
 	fix_def.filter.maskBits = std::numeric_limits<std::underlying_type<entity::type>::type>::max();
-	fix_def.filter.groupIndex = id * -1;
 	body_def.position.Set(0, 0);
 	body_ = world_.CreateBody(&body_def);
 	fixture_ = body_->CreateFixture(&fix_def);
@@ -454,7 +496,7 @@ void hip::turn(std::int16_t velocity)
 class player
 {
 public:
-	player(b2World& world, std::uint8_t id);
+	player(b2World& world, entity::id id);
 	inline void run(std::int16_t velocity) { neck_.run(velocity); hip_.run(velocity); }
 	inline void turn_head(std::int16_t velocity) { neck_.turn(velocity); }
 	inline void turn_torso(std::int16_t velocity) { hip_.turn(velocity); }
@@ -466,7 +508,7 @@ public:
 	inline float get_foot_translation() const { return hip_.get_foot_translation(); }
 	inline float get_foot_speed() const { return hip_.get_foot_speed(); }
 private:
-	std::uint8_t id_;
+	entity::id id_;
 	torso torso_;
 	head head_;
 	foot foot_;
@@ -474,7 +516,7 @@ private:
 	hip hip_;
 };
 
-player::player(b2World& world, std::uint8_t id)
+player::player(b2World& world, entity::id id)
 	:
 		id_(id),
 		torso_(world, id_),
@@ -487,7 +529,7 @@ player::player(b2World& world, std::uint8_t id)
 class goal
 {
 public:
-	explicit goal(b2World& world);
+	goal(b2World& world, entity::id id);
 	~goal() noexcept;
 private:
 	b2World& world_;
@@ -500,7 +542,7 @@ private:
 	b2Fixture* sensor_;
 };
 
-goal::goal(b2World& world)
+goal::goal(b2World& world, entity::id id)
 	:
 		world_(world),
 		body_(nullptr),
@@ -526,7 +568,7 @@ goal::goal(b2World& world)
 	back_shape.m_hasVertex3 = false;
 	b2FixtureDef back_def;
 	back_def.shape = &back_shape;
-	back_def.filter.categoryBits = entity::goal;
+	entity::config_fixture(back_def, entity::goal_net, id);
 	back_def.filter.maskBits = std::numeric_limits<std::underlying_type<entity::type>::type>::max();
 	back_net_ = body_->CreateFixture(&back_def);
 
@@ -539,7 +581,7 @@ goal::goal(b2World& world)
 	left_shape.m_hasVertex3 = false;
 	b2FixtureDef left_net_def;
 	left_net_def.shape = &left_shape;
-	left_net_def.filter.categoryBits = entity::goal;
+	entity::config_fixture(left_net_def, entity::goal_net, id);
 	left_net_def.filter.maskBits = std::numeric_limits<std::underlying_type<entity::type>::type>::max();
 	left_net_ = body_->CreateFixture(&left_net_def);
 
@@ -552,7 +594,7 @@ goal::goal(b2World& world)
 	right_shape.m_hasVertex3 = false;
 	b2FixtureDef right_net_def;
 	right_net_def.shape = &right_shape;
-	right_net_def.filter.categoryBits = entity::goal;
+	entity::config_fixture(right_net_def, entity::goal_net, id);
 	right_net_def.filter.maskBits = std::numeric_limits<std::underlying_type<entity::type>::type>::max();
 	right_net_ = body_->CreateFixture(&right_net_def);
 
@@ -561,7 +603,7 @@ goal::goal(b2World& world)
 	left_post.m_radius = 0.5;
 	b2FixtureDef left_post_def;
 	left_post_def.shape = &left_post;
-	left_post_def.filter.categoryBits = entity::goal;
+	entity::config_fixture(left_post_def, entity::goal_left_post, id);
 	left_post_def.filter.maskBits = std::numeric_limits<std::underlying_type<entity::type>::type>::max();
 	left_post_ = body_->CreateFixture(&left_post_def);
 
@@ -570,7 +612,7 @@ goal::goal(b2World& world)
 	right_post.m_radius = 0.5;
 	b2FixtureDef right_post_def;
 	right_post_def.shape = &right_post;
-	right_post_def.filter.categoryBits = entity::goal;
+	entity::config_fixture(right_post_def, entity::goal_right_post, id);
 	right_post_def.filter.maskBits = std::numeric_limits<std::underlying_type<entity::type>::type>::max();
 	right_post_ = body_->CreateFixture(&right_post_def);
 
@@ -585,7 +627,7 @@ goal::goal(b2World& world)
 	sensor_def.shape = &sensor_box;
 	sensor_def.density = 0;
 	sensor_def.isSensor = true;
-	sensor_def.filter.categoryBits = entity::goal_sensor;
+	entity::config_fixture(sensor_def, entity::goal_sensor, id);
 	sensor_def.filter.maskBits = entity::ball;
 	sensor_ = body_->CreateFixture(&sensor_def);
 }
@@ -604,7 +646,7 @@ goal::~goal() noexcept
 class field_sensor
 {
 public:
-	explicit field_sensor(b2World& world);
+	field_sensor(b2World& world, entity::id id);
 	~field_sensor() noexcept;
 private:
 	b2World& world_;
@@ -612,7 +654,7 @@ private:
 	b2Fixture* fixture_;
 };
 
-field_sensor::field_sensor(b2World& world)
+field_sensor::field_sensor(b2World& world, entity::id id)
 	:
 		world_(world),
 		body_(nullptr),
@@ -630,7 +672,7 @@ field_sensor::field_sensor(b2World& world)
 	b2FixtureDef fixture_def;
 	fixture_def.shape = &sensor;
 	fixture_def.isSensor = true;
-	fixture_def.filter.categoryBits = entity::field_sensor;
+	entity::config_fixture(fixture_def, entity::field_sensor, id);
 	fixture_def.filter.maskBits = entity::player_sensor;
 	fixture_ = body_->CreateFixture(&fixture_def);
 }
@@ -646,34 +688,79 @@ field_sensor::~field_sensor() noexcept
 	}
 }
 
-class Football : public Test
+struct sensor_event
+{
+	sensor_event();
+	sensor_event(entity::type t, entity::id i, float d, float a);
+	entity::type type;
+	entity::id id;
+	float distance;
+	float angle;
+};
+
+sensor_event::sensor_event()
+	:
+		type(entity::player_sensor),
+		id(entity::alpha_1),
+		distance(0.0),
+		angle(0.0)
+{}
+
+sensor_event::sensor_event(entity::type t, entity::id i, float d, float a)
+	:
+		type(t),
+		id(i),
+		distance(d),
+		angle(a)
+{}
+
+class football : public Test
 {
 public:
-	Football();
+	football();
 	virtual void Step(Settings* settings);
 	virtual void Keyboard(int key);
 	static Test* Create();
+	inline void increment_score() { ++score_; }
+	inline void set_event(const sensor_event& event) { event_ = event; }
 private:
+	class contact_listener : public b2ContactListener
+	{
+	public:
+		explicit contact_listener(football& football);
+		virtual void BeginContact(b2Contact* contact);
+	private:
+		football& football_;
+	};
 	ball ball_;
 	player player1_;
 	goal left_goal_;
 	field_sensor sensor1_;
+	contact_listener listener_;
+	std::uint8_t score_;
+	sensor_event event_;
 };
 
-Football::Football()
+football::football()
 	:
 		Test(),
 		ball_(*m_world),
-		player1_(*m_world, 1),
-		left_goal_(*m_world),
-		sensor1_(*m_world)
+		player1_(*m_world, entity::alpha_1),
+		left_goal_(*m_world, entity::left_goal),
+		sensor1_(*m_world, entity::center_sensor),
+		listener_(*this),
+		score_(0),
+		event_()
 {
 	m_world->SetGravity(b2Vec2(0, 0));
+	m_world->SetContactListener(&listener_);
 }
 
-void Football::Step(Settings* settings)
+void football::Step(Settings* settings)
 {
 	Test::Step(settings);
+	g_debugDraw.DrawString(5, m_textLine, "Score: %d", score_);
+	m_textLine += DRAW_STRING_NEW_LINE;
 	g_debugDraw.DrawString(5, m_textLine, "Player head angle: %3.2f", player1_.get_head_angle() * rad2deg);
 	m_textLine += DRAW_STRING_NEW_LINE;
 	g_debugDraw.DrawString(5, m_textLine, "Player head velocity: %3.2f", player1_.get_head_velocity());
@@ -686,9 +773,17 @@ void Football::Step(Settings* settings)
 	m_textLine += DRAW_STRING_NEW_LINE;
 	g_debugDraw.DrawString(5, m_textLine, "Player foot speed: %3.2f", player1_.get_foot_speed());
 	m_textLine += DRAW_STRING_NEW_LINE;
+	g_debugDraw.DrawString(5, m_textLine, "Sensed entity id: %d", event_.id);
+	m_textLine += DRAW_STRING_NEW_LINE;
+	g_debugDraw.DrawString(5, m_textLine, "Sensed entity type: %d", event_.type);
+	m_textLine += DRAW_STRING_NEW_LINE;
+	g_debugDraw.DrawString(5, m_textLine, "Sensed entity angle: %3.2f", event_.angle * rad2deg);
+	m_textLine += DRAW_STRING_NEW_LINE;
+	g_debugDraw.DrawString(5, m_textLine, "Sensed entity distance: %3.2f", event_.distance);
+	m_textLine += DRAW_STRING_NEW_LINE;
 }
 
-void Football::Keyboard(int key)
+void football::Keyboard(int key)
 {
 	switch (key)
 	{
@@ -719,9 +814,66 @@ void Football::Keyboard(int key)
 	}
 }
 
-Test* Football::Create()
+Test* football::Create()
 {
-	return new Football();
+	return new football();
+}
+
+football::contact_listener::contact_listener(football& football)
+	:
+		b2ContactListener(),
+		football_(football)
+{}
+
+void football::contact_listener::BeginContact(b2Contact* contact)
+{
+	if (!contact || !contact->IsTouching())
+	{
+		return;
+	}
+	entity::type a_type = entity::get_type(*contact->GetFixtureA());
+	entity::type b_type = entity::get_type(*contact->GetFixtureB());
+	if ((a_type == entity::ball && b_type == entity::goal_sensor) ||
+		(a_type == entity::goal_sensor && b_type == entity::ball))
+	{
+		football_.increment_score();
+	}
+	else if (a_type == entity::player_sensor)
+	{
+		b2WorldManifold manifold;
+		contact->GetWorldManifold(&manifold);
+		const b2Vec2& position_a = contact->GetFixtureA()->GetBody()->GetPosition();
+		const b2Vec2& position_b = contact->GetFixtureB()->GetBody()->GetPosition();
+		float distance = sqrtf(((position_b.x - position_a.x) * (position_b.x - position_a.x)) + ((position_b.y - position_a.y) * (position_b.y - position_a.y)));
+		float entity_angle = atan2f(position_b.y - position_a.y, position_b.x - position_a.x);
+		float head_angle = contact->GetFixtureA()->GetBody()->GetAngle();
+		sensor_event event
+		{
+			b_type,
+			entity::get_id(*contact->GetFixtureB()),
+			distance,
+			entity_angle - head_angle
+		};
+		football_.set_event(event);
+	}
+	else if (b_type == entity::player_sensor)
+	{
+		b2WorldManifold manifold;
+		contact->GetWorldManifold(&manifold);
+		const b2Vec2& position_a = contact->GetFixtureA()->GetBody()->GetPosition();
+		const b2Vec2& position_b = contact->GetFixtureB()->GetBody()->GetPosition();
+		float distance = sqrtf(((position_a.x - position_b.x) * (position_a.x - position_b.x)) + ((position_a.y - position_b.y) * (position_a.y - position_b.y)));
+		float entity_angle = atan2f(position_a.y - position_b.y, position_a.x - position_b.x);
+		float head_angle = contact->GetFixtureA()->GetBody()->GetAngle();
+		sensor_event event
+		{
+			a_type,
+			entity::get_id(*contact->GetFixtureA()),
+			distance,
+			entity_angle - head_angle
+		};
+		football_.set_event(event);
+	}
 }
 
 #endif

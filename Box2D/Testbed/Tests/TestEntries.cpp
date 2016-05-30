@@ -126,6 +126,6 @@ TestEntry g_testEntries[] =
 	{"Sensor Test", SensorTest::Create},
 	{"Varying Friction", VaryingFriction::Create},
 	{"Add Pair Stress Test", AddPair::Create},
-	{"Football", Football::Create},
+	{"Football", football::Create},
 	{NULL, NULL}
 };
