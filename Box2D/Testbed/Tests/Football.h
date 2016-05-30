@@ -112,6 +112,7 @@ ball::~ball() noexcept
 {
 	try
 	{
+		world_.DestroyBody(body_);
 	}
 	catch (...)
 	{
@@ -181,6 +182,7 @@ torso::~torso() noexcept
 {
 	try
 	{
+		world_.DestroyBody(body_);
 	}
 	catch (...)
 	{
@@ -279,6 +281,7 @@ head::~head() noexcept
 {
 	try
 	{
+		world_.DestroyBody(body_);
 	}
 	catch (...)
 	{
@@ -342,6 +345,7 @@ foot::~foot() noexcept
 {
 	try
 	{
+		world_.DestroyBody(body_);
 	}
 	catch (...)
 	{
@@ -391,6 +395,7 @@ neck::~neck() noexcept
 {
 	try
 	{
+		world_.DestroyJoint(joint_);
 	}
 	catch (...)
 	{
@@ -457,6 +462,7 @@ hip::~hip() noexcept
 {
 	try
 	{
+		world_.DestroyJoint(joint_);
 	}
 	catch (...)
 	{
@@ -636,6 +642,7 @@ goal::~goal() noexcept
 {
 	try
 	{
+		world_.DestroyBody(body_);
 	}
 	catch (...)
 	{
@@ -681,6 +688,7 @@ field_sensor::~field_sensor() noexcept
 {
 	try
 	{
+		world_.DestroyBody(body_);
 	}
 	catch (...)
 	{
