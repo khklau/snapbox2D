@@ -54,13 +54,27 @@ namespace entity
 		the_ball,
 		left_goal,
 		right_goal,
-		center_sensor,
-		center_top_sensor,
-		center_bottom_sensor,
-		top_left_sensor,
-		bottom_left_sensor,
-		top_right_sensor,
-		bottom_right_sensor
+		center_spot,
+		center_top,
+		center_bottom,
+		center_left,
+		center_right,
+		half_line_top,
+		half_line_bottom,
+		corner_top_left,
+		corner_bottom_left,
+		corner_top_right,
+		corner_bottom_right,
+		left_penalty_spot,
+		left_penalty_top_left,
+		left_penalty_top_right,
+		left_penalty_bottom_left,
+		left_penalty_bottom_right,
+		right_penalty_spot,
+		right_penalty_top_left,
+		right_penalty_top_right,
+		right_penalty_bottom_left,
+		right_penalty_bottom_right,
 	};
 	void config_fixture(b2FixtureDef& def, const type& type, const id& id);
 	inline type get_type(const b2Fixture& fixture) { return static_cast<type>(fixture.GetFilterData().categoryBits); }
@@ -76,7 +90,7 @@ void entity::config_fixture(b2FixtureDef& def, const type& type, const id& id)
 class ball
 {
 public:
-	explicit ball(b2World& world);
+	ball(b2World& world, const b2Vec2& position);
 	~ball() noexcept;
 private:
 	b2World& world_;
@@ -84,7 +98,7 @@ private:
 	b2Fixture* fixture_;
 };
 
-ball::ball(b2World& world)
+ball::ball(b2World& world, const b2Vec2& position)
 	:
 		world_(world),
 		body_(nullptr),
@@ -92,7 +106,7 @@ ball::ball(b2World& world)
 {
 	b2BodyDef body_def;
 	body_def.type = b2_dynamicBody;
-	body_def.position.Set(0, 25);
+	body_def.position.Set(position.x, position.y);
 	body_def.angle = 0 * deg2rad;
 	body_def.linearDamping = 0.15f;
 	body_def.angularDamping = 0.15f;
@@ -129,7 +143,7 @@ struct torso_key
 class torso
 {
 public:
-	torso(b2World& world, entity::id id);
+	torso(b2World& world, entity::id id, const b2Vec2& position);
 	~torso() noexcept;
 	inline b2Body& get_body(const torso_key&) { return *body_; }
 private:
@@ -138,7 +152,7 @@ private:
 	b2Fixture* fixture_;
 };
 
-torso::torso(b2World& world, entity::id id)
+torso::torso(b2World& world, entity::id id, const b2Vec2& position)
 	:
 		world_(world),
 		body_(nullptr),
@@ -146,7 +160,7 @@ torso::torso(b2World& world, entity::id id)
 {
 	b2BodyDef body_def;
 	body_def.type = b2_dynamicBody;
-	body_def.position.Set(10, 10);
+	body_def.position.Set(position.x, position.y);
 	body_def.angle = 0 * deg2rad;
 	body_def.linearDamping = 0.15f;
 	body_def.angularDamping = 0.15f;
@@ -198,7 +212,7 @@ struct head_key
 class head
 {
 public:
-	head(b2World& world, entity::id id, std::size_t vision_radius = 20U, std::size_t vision_degree = 120U);
+	head(b2World& world, entity::id id, const b2Vec2& position, std::size_t vision_radius = 20U, std::size_t vision_degree = 120U);
 	~head() noexcept;
 	inline b2Body& get_body(const head_key&) { return *body_; }
 private:
@@ -209,7 +223,7 @@ private:
 	b2Fixture* vision2_fixture_;
 };
 
-head::head(b2World& world, entity::id id, std::size_t vision_radius, std::size_t vision_degree)
+head::head(b2World& world, entity::id id, const b2Vec2& position, std::size_t vision_radius, std::size_t vision_degree)
 	:
 		world_(world),
 		body_(nullptr),
@@ -219,7 +233,7 @@ head::head(b2World& world, entity::id id, std::size_t vision_radius, std::size_t
 {
 	b2BodyDef body_def;
 	body_def.type = b2_dynamicBody;
-	body_def.position.Set(0, 0);
+	body_def.position.Set(position.x, position.y);
 	body_def.angle = 0 * deg2rad;
 	body_def.linearDamping = 0.15f;
 	body_def.angularDamping = 0.15f;
@@ -297,7 +311,7 @@ struct foot_key
 class foot
 {
 public:
-	foot(b2World& world, entity::id id);
+	foot(b2World& world, entity::id id, const b2Vec2& position);
 	~foot() noexcept;
 	inline b2Body& get_body(const foot_key&) { return *body_; }
 private:
@@ -306,7 +320,7 @@ private:
 	b2Fixture* fixture_;
 };
 
-foot::foot(b2World& world, entity::id id)
+foot::foot(b2World& world, entity::id id, const b2Vec2& position)
 	:
 		world_(world),
 		body_(nullptr),
@@ -314,7 +328,7 @@ foot::foot(b2World& world, entity::id id)
 {
 	b2BodyDef body_def;
 	body_def.type = b2_dynamicBody;
-	body_def.position.Set(10, 10);
+	body_def.position.Set(position.x, position.y);
 	body_def.angle = 0 * deg2rad;
 	body_def.linearDamping = 0.15f;
 	body_def.angularDamping = 0.15f;
@@ -502,7 +516,7 @@ void hip::turn(std::int16_t velocity)
 class player
 {
 public:
-	player(b2World& world, entity::id id);
+	player(b2World& world, entity::id id, const b2Vec2& position);
 	inline void run(std::int16_t velocity) { neck_.run(velocity); hip_.run(velocity); }
 	inline void turn_head(std::int16_t velocity) { neck_.turn(velocity); }
 	inline void turn_torso(std::int16_t velocity) { hip_.turn(velocity); }
@@ -522,12 +536,12 @@ private:
 	hip hip_;
 };
 
-player::player(b2World& world, entity::id id)
+player::player(b2World& world, entity::id id, const b2Vec2& position)
 	:
 		id_(id),
-		torso_(world, id_),
-		head_(world, id_),
-		foot_(world, id_),
+		torso_(world, id_, position),
+		head_(world, id_, position),
+		foot_(world, id_, position),
 		neck_(world, torso_, head_),
 		hip_(world, torso_, foot_)
 {}
@@ -535,7 +549,7 @@ player::player(b2World& world, entity::id id)
 class goal
 {
 public:
-	goal(b2World& world, entity::id id);
+	goal(b2World& world, entity::id id, const b2Vec2& position);
 	~goal() noexcept;
 private:
 	b2World& world_;
@@ -548,7 +562,7 @@ private:
 	b2Fixture* sensor_;
 };
 
-goal::goal(b2World& world, entity::id id)
+goal::goal(b2World& world, entity::id id, const b2Vec2& position)
 	:
 		world_(world),
 		body_(nullptr),
@@ -561,13 +575,19 @@ goal::goal(b2World& world, entity::id id)
 {
 	b2BodyDef body_def;
 	body_def.type = b2_staticBody;
-	body_def.position.Set(-20, 20);
+	body_def.position.Set(position.x, position.y);
 	body_def.angle = 0;
 	body_ = world_.CreateBody(&body_def);
 
+	float orientation = 1.0;
+	if (id == entity::right_goal)
+	{
+		orientation = -1.0;
+	}
+
 	std::array<b2Vec2, 2> back_vertices;
-	back_vertices[0].Set(-4.0, 12.0);
-	back_vertices[1].Set(-4.0, -12.0);
+	back_vertices[0].Set(-4.0 * orientation, 12.0 * orientation);
+	back_vertices[1].Set(-4.0 * orientation, -12.0 * orientation);
 	b2EdgeShape back_shape;
 	back_shape.Set(back_vertices[0], back_vertices[1]);
 	back_shape.m_hasVertex0 = false;
@@ -579,8 +599,8 @@ goal::goal(b2World& world, entity::id id)
 	back_net_ = body_->CreateFixture(&back_def);
 
 	std::array<b2Vec2, 2> left_vertices;
-	left_vertices[0].Set(-4.0, 12.0);
-	left_vertices[1].Set(-0.5, 12.0);
+	left_vertices[0].Set(-4.0 * orientation, 12.0 * orientation);
+	left_vertices[1].Set(-0.5 * orientation, 12.0 * orientation);
 	b2EdgeShape left_shape;
 	left_shape.Set(left_vertices[0], left_vertices[1]);
 	left_shape.m_hasVertex0 = false;
@@ -592,8 +612,8 @@ goal::goal(b2World& world, entity::id id)
 	left_net_ = body_->CreateFixture(&left_net_def);
 
 	std::array<b2Vec2, 2> right_vertices;
-	right_vertices[0].Set(-4.0, -12.0);
-	right_vertices[1].Set(-0.5, -12.0);
+	right_vertices[0].Set(-4.0 * orientation, -12.0 * orientation);
+	right_vertices[1].Set(-0.5 * orientation, -12.0 * orientation);
 	b2EdgeShape right_shape;
 	right_shape.Set(right_vertices[0], right_vertices[1]);
 	right_shape.m_hasVertex0 = false;
@@ -605,7 +625,7 @@ goal::goal(b2World& world, entity::id id)
 	right_net_ = body_->CreateFixture(&right_net_def);
 
 	b2CircleShape left_post;
-	left_post.m_p.Set(0.0, 12.0);
+	left_post.m_p.Set(0.0, 12.0 * orientation);
 	left_post.m_radius = 0.5;
 	b2FixtureDef left_post_def;
 	left_post_def.shape = &left_post;
@@ -614,7 +634,7 @@ goal::goal(b2World& world, entity::id id)
 	left_post_ = body_->CreateFixture(&left_post_def);
 
 	b2CircleShape right_post;
-	right_post.m_p.Set(0.0, -12.0);
+	right_post.m_p.Set(0.0, -12.0 * orientation);
 	right_post.m_radius = 0.5;
 	b2FixtureDef right_post_def;
 	right_post_def.shape = &right_post;
@@ -623,10 +643,10 @@ goal::goal(b2World& world, entity::id id)
 	right_post_ = body_->CreateFixture(&right_post_def);
 
 	std::array<b2Vec2, 4> sensor_vertices;
-	sensor_vertices[0].Set(-4.0, 12.0);
-	sensor_vertices[1].Set(-2.0, 12.0);
-	sensor_vertices[2].Set(-2.0, -12.0);
-	sensor_vertices[3].Set(-4.0, -12.0);
+	sensor_vertices[0].Set(-4.0 * orientation, 12.0 * orientation);
+	sensor_vertices[1].Set(-2.0 * orientation, 12.0 * orientation);
+	sensor_vertices[2].Set(-2.0 * orientation, -12.0 * orientation);
+	sensor_vertices[3].Set(-4.0 * orientation, -12.0 * orientation);
 	b2PolygonShape sensor_box;
 	sensor_box.Set(sensor_vertices.data(), sensor_vertices.max_size());
 	b2FixtureDef sensor_def;
@@ -653,7 +673,7 @@ goal::~goal() noexcept
 class field_sensor
 {
 public:
-	field_sensor(b2World& world, entity::id id);
+	field_sensor(b2World& world, entity::id id, const b2Vec2& position);
 	~field_sensor() noexcept;
 private:
 	b2World& world_;
@@ -661,7 +681,7 @@ private:
 	b2Fixture* fixture_;
 };
 
-field_sensor::field_sensor(b2World& world, entity::id id)
+field_sensor::field_sensor(b2World& world, entity::id id, const b2Vec2& position)
 	:
 		world_(world),
 		body_(nullptr),
@@ -669,7 +689,7 @@ field_sensor::field_sensor(b2World& world, entity::id id)
 {
 	b2BodyDef body_def;
 	body_def.type = b2_staticBody;
-	body_def.position.Set(0, 10);
+	body_def.position.Set(position.x, position.y);
 	body_def.angle = 0;
 	body_ = world_.CreateBody(&body_def);
 
@@ -743,7 +763,28 @@ private:
 	ball ball_;
 	player player1_;
 	goal left_goal_;
-	field_sensor sensor1_;
+	goal right_goal_;
+	field_sensor center_spot_;
+	field_sensor center_top_;
+	field_sensor center_bottom_;
+	field_sensor center_left_;
+	field_sensor center_right_;
+	field_sensor half_line_top_;
+	field_sensor half_line_bottom_;
+	field_sensor corner_top_left_;
+	field_sensor corner_top_right_;
+	field_sensor corner_bottom_left_;
+	field_sensor corner_bottom_right_;
+	field_sensor left_penalty_spot_;
+	field_sensor left_penalty_top_left_;
+	field_sensor left_penalty_top_right_;
+	field_sensor left_penalty_bottom_left_;
+	field_sensor left_penalty_bottom_right_;
+	field_sensor right_penalty_spot_;
+	field_sensor right_penalty_top_left_;
+	field_sensor right_penalty_top_right_;
+	field_sensor right_penalty_bottom_left_;
+	field_sensor right_penalty_bottom_right_;
 	contact_listener listener_;
 	std::uint8_t score_;
 	sensor_event event_;
@@ -752,10 +793,31 @@ private:
 football::football()
 	:
 		Test(),
-		ball_(*m_world),
-		player1_(*m_world, entity::alpha_1),
-		left_goal_(*m_world, entity::left_goal),
-		sensor1_(*m_world, entity::center_sensor),
+		ball_(*m_world, b2Vec2(0, 75)),
+		player1_(*m_world, entity::alpha_1, b2Vec2(-10, 15)),
+		left_goal_(*m_world, entity::left_goal, b2Vec2(-120, 75)),
+		right_goal_(*m_world, entity::right_goal, b2Vec2(120, 75)),
+		center_spot_(*m_world, entity::center_spot, b2Vec2(0, 75)),
+		center_top_(*m_world, entity::center_top, b2Vec2(0, 55)),
+		center_bottom_(*m_world, entity::center_bottom, b2Vec2(0, 95)),
+		center_left_(*m_world, entity::center_left, b2Vec2(-20, 75)),
+		center_right_(*m_world, entity::center_right, b2Vec2(20, 75)),
+		half_line_top_(*m_world, entity::half_line_top, b2Vec2(0, 135)),
+		half_line_bottom_(*m_world, entity::half_line_bottom, b2Vec2(0, 15)),
+		corner_top_left_(*m_world, entity::corner_top_left, b2Vec2(-120, 135)),
+		corner_top_right_(*m_world, entity::corner_top_right, b2Vec2(120, 135)),
+		corner_bottom_left_(*m_world, entity::corner_bottom_left, b2Vec2(-120, 15)),
+		corner_bottom_right_(*m_world, entity::corner_bottom_right, b2Vec2(120, 15)),
+		left_penalty_spot_(*m_world, entity::left_penalty_spot, b2Vec2(-95, 75)),
+		left_penalty_top_left_(*m_world, entity::left_penalty_top_left, b2Vec2(-120, 115)),
+		left_penalty_top_right_(*m_world, entity::left_penalty_top_right, b2Vec2(-80, 115)),
+		left_penalty_bottom_left_(*m_world, entity::left_penalty_bottom_left, b2Vec2(-120, 35)),
+		left_penalty_bottom_right_(*m_world, entity::left_penalty_bottom_right, b2Vec2(-80, 35)),
+		right_penalty_spot_(*m_world, entity::left_penalty_spot, b2Vec2(95, 75)),
+		right_penalty_top_left_(*m_world, entity::left_penalty_top_left, b2Vec2(80, 115)),
+		right_penalty_top_right_(*m_world, entity::left_penalty_top_right, b2Vec2(120, 115)),
+		right_penalty_bottom_left_(*m_world, entity::left_penalty_bottom_left, b2Vec2(80, 35)),
+		right_penalty_bottom_right_(*m_world, entity::left_penalty_bottom_right, b2Vec2(120, 35)),
 		listener_(*this),
 		score_(0),
 		event_()
