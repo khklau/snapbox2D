@@ -212,7 +212,7 @@ struct head_key
 class head
 {
 public:
-	head(b2World& world, entity::id id, const b2Vec2& position, std::size_t vision_radius = 20U, std::size_t vision_degree = 120U);
+	head(b2World& world, entity::id id, const b2Vec2& position, std::size_t vision_radius = 60U, std::size_t vision_degree = 120U);
 	~head() noexcept;
 	inline b2Body& get_body(const head_key&) { return *body_; }
 private:
@@ -221,6 +221,8 @@ private:
 	b2Fixture* head_fixture_;
 	b2Fixture* vision1_fixture_;
 	b2Fixture* vision2_fixture_;
+	b2Fixture* vision3_fixture_;
+	b2Fixture* vision4_fixture_;
 };
 
 head::head(b2World& world, entity::id id, const b2Vec2& position, std::size_t vision_radius, std::size_t vision_degree)
@@ -229,7 +231,9 @@ head::head(b2World& world, entity::id id, const b2Vec2& position, std::size_t vi
 		body_(nullptr),
 		head_fixture_(nullptr),
 		vision1_fixture_(nullptr),
-		vision2_fixture_(nullptr)
+		vision2_fixture_(nullptr),
+		vision3_fixture_(nullptr),
+		vision4_fixture_(nullptr)
 {
 	b2BodyDef body_def;
 	body_def.type = b2_dynamicBody;
@@ -249,14 +253,14 @@ head::head(b2World& world, entity::id id, const b2Vec2& position, std::size_t vi
 
 	head_fixture_ = body_->CreateFixture(&head_fix_def);
 	
-	std::size_t arc_degree = vision_degree / 2;
+	std::size_t arc_degree = vision_degree / 4;
 
 	b2PolygonShape arc1;
 	std::array<b2Vec2, 8> vertices1;
 	vertices1[0].Set(0, 0);
 	for (std::size_t vertex = 0; vertex < (vertices1.max_size() - 1); ++vertex)
 	{
-		float angle = ((vertex / (vertices1.max_size() - 2.0) * arc_degree) - arc_degree) *deg2rad;
+		float angle = ((vertex / (vertices1.max_size() - 2.0) * arc_degree) - (arc_degree * 2)) *deg2rad;
 		vertices1[vertex + 1].Set(vision_radius * cosf(angle), vision_radius * sinf(angle));
 	}
 	arc1.Set(vertices1.data(), vertices1.max_size());
@@ -273,7 +277,7 @@ head::head(b2World& world, entity::id id, const b2Vec2& position, std::size_t vi
 	vertices2[0].Set(0, 0);
 	for (std::size_t vertex = 0; vertex < (vertices2.max_size() - 1); ++vertex)
 	{
-		float angle = (vertex / (vertices1.max_size() - 2.0) * arc_degree) *deg2rad;
+		float angle = ((vertex / (vertices1.max_size() - 2.0) * arc_degree) - arc_degree) *deg2rad;
 		vertices2[vertex + 1].Set(vision_radius * cosf(angle), vision_radius * sinf(angle));
 	}
 	arc2.Set(vertices2.data(), vertices2.max_size());
@@ -284,6 +288,40 @@ head::head(b2World& world, entity::id id, const b2Vec2& position, std::size_t vi
 	entity::config_fixture(vision2_fix_def, entity::player_sensor, id);
 	vision2_fix_def.filter.maskBits = std::numeric_limits<std::underlying_type<entity::type>::type>::max();
 	vision2_fixture_ = body_->CreateFixture(&vision2_fix_def);
+	
+	b2PolygonShape arc3;
+	std::array<b2Vec2, 8> vertices3;
+	vertices3[0].Set(0, 0);
+	for (std::size_t vertex = 0; vertex < (vertices3.max_size() - 1); ++vertex)
+	{
+		float angle = ((vertex / (vertices3.max_size() - 2.0) * arc_degree)) *deg2rad;
+		vertices3[vertex + 1].Set(vision_radius * cosf(angle), vision_radius * sinf(angle));
+	}
+	arc3.Set(vertices3.data(), vertices3.max_size());
+	b2FixtureDef vision3_fix_def;
+	vision3_fix_def.shape = &arc3;
+	vision3_fix_def.density = 0;
+	vision3_fix_def.isSensor = true;
+	entity::config_fixture(vision3_fix_def, entity::player_sensor, id);
+	vision3_fix_def.filter.maskBits = std::numeric_limits<std::underlying_type<entity::type>::type>::max();
+	vision3_fixture_ = body_->CreateFixture(&vision3_fix_def);
+
+	b2PolygonShape arc4;
+	std::array<b2Vec2, 8> vertices4;
+	vertices4[0].Set(0, 0);
+	for (std::size_t vertex = 0; vertex < (vertices4.max_size() - 1); ++vertex)
+	{
+		float angle = ((vertex / (vertices1.max_size() - 2.0) * arc_degree) + arc_degree) *deg2rad;
+		vertices4[vertex + 1].Set(vision_radius * cosf(angle), vision_radius * sinf(angle));
+	}
+	arc4.Set(vertices4.data(), vertices4.max_size());
+	b2FixtureDef vision4_fix_def;
+	vision4_fix_def.shape = &arc4;
+	vision4_fix_def.density = 0;
+	vision4_fix_def.isSensor = true;
+	entity::config_fixture(vision4_fix_def, entity::player_sensor, id);
+	vision4_fix_def.filter.maskBits = std::numeric_limits<std::underlying_type<entity::type>::type>::max();
+	vision4_fixture_ = body_->CreateFixture(&vision4_fix_def);
 
 	b2MassData mass;
 	body_->GetMassData(&mass);
@@ -761,7 +799,8 @@ private:
 		football& football_;
 	};
 	ball ball_;
-	player player1_;
+	player player_a1_;
+	player player_b1_;
 	goal left_goal_;
 	goal right_goal_;
 	field_sensor center_spot_;
@@ -794,7 +833,8 @@ football::football()
 	:
 		Test(),
 		ball_(*m_world, b2Vec2(0, 75)),
-		player1_(*m_world, entity::alpha_1, b2Vec2(-10, 15)),
+		player_a1_(*m_world, entity::alpha_1, b2Vec2(-20, 15)),
+		player_b1_(*m_world, entity::beta_1, b2Vec2(20, 15)),
 		left_goal_(*m_world, entity::left_goal, b2Vec2(-120, 75)),
 		right_goal_(*m_world, entity::right_goal, b2Vec2(120, 75)),
 		center_spot_(*m_world, entity::center_spot, b2Vec2(0, 75)),
@@ -831,17 +871,17 @@ void football::Step(Settings* settings)
 	Test::Step(settings);
 	g_debugDraw.DrawString(5, m_textLine, "Score: %d", score_);
 	m_textLine += DRAW_STRING_NEW_LINE;
-	g_debugDraw.DrawString(5, m_textLine, "Player head angle: %3.2f", player1_.get_head_angle() * rad2deg);
+	g_debugDraw.DrawString(5, m_textLine, "Player head angle: %3.2f", player_a1_.get_head_angle() * rad2deg);
 	m_textLine += DRAW_STRING_NEW_LINE;
-	g_debugDraw.DrawString(5, m_textLine, "Player head velocity: %3.2f", player1_.get_head_velocity());
+	g_debugDraw.DrawString(5, m_textLine, "Player head velocity: %3.2f", player_a1_.get_head_velocity());
 	m_textLine += DRAW_STRING_NEW_LINE;
-	g_debugDraw.DrawString(5, m_textLine, "Player torso angle: %3.2f", player1_.get_torso_angle() * rad2deg);
+	g_debugDraw.DrawString(5, m_textLine, "Player torso angle: %3.2f", player_a1_.get_torso_angle() * rad2deg);
 	m_textLine += DRAW_STRING_NEW_LINE;
-	g_debugDraw.DrawString(5, m_textLine, "Player torso angular velocity: %3.2f", player1_.get_torso_angular_velocity());
+	g_debugDraw.DrawString(5, m_textLine, "Player torso angular velocity: %3.2f", player_a1_.get_torso_angular_velocity());
 	m_textLine += DRAW_STRING_NEW_LINE;
-	g_debugDraw.DrawString(5, m_textLine, "Player foot translation: %3.2f", player1_.get_foot_translation());
+	g_debugDraw.DrawString(5, m_textLine, "Player foot translation: %3.2f", player_a1_.get_foot_translation());
 	m_textLine += DRAW_STRING_NEW_LINE;
-	g_debugDraw.DrawString(5, m_textLine, "Player foot speed: %3.2f", player1_.get_foot_speed());
+	g_debugDraw.DrawString(5, m_textLine, "Player foot speed: %3.2f", player_a1_.get_foot_speed());
 	m_textLine += DRAW_STRING_NEW_LINE;
 	g_debugDraw.DrawString(5, m_textLine, "Sensed entity id: %d", event_.id);
 	m_textLine += DRAW_STRING_NEW_LINE;
@@ -858,28 +898,28 @@ void football::Keyboard(int key)
 	switch (key)
 	{
 		case GLFW_KEY_Q:
-			player1_.turn_head(100);
+			player_a1_.turn_head(100);
 			break;
 		case GLFW_KEY_E:
-			player1_.turn_head(-100);
+			player_a1_.turn_head(-100);
 			break;
 		case GLFW_KEY_W:
-			player1_.run(8000);
+			player_a1_.run(8000);
 			break;
 		case GLFW_KEY_S:
-			player1_.run(-8000);
+			player_a1_.run(-8000);
 			break;
 		case GLFW_KEY_A:
-			player1_.turn_torso(200);
+			player_a1_.turn_torso(200);
 			break;
 		case GLFW_KEY_D:
-			player1_.turn_torso(-200);
+			player_a1_.turn_torso(-200);
 			break;
 		case GLFW_KEY_3:
-			player1_.kick(8000);
+			player_a1_.kick(8000);
 			break;
 		case GLFW_KEY_1:
-			player1_.kick(-8000);
+			player_a1_.kick(-8000);
 			break;
 	}
 }
