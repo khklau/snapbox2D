@@ -25,7 +25,10 @@ namespace entity
 		player_foot,
 		player_head,
 		player_sensor,
-		field_sensor
+		center_circle,
+		boundary,
+		left_penalty_box,
+		right_penalty_box
 	};
 	enum id : std::uint16_t
 	{
@@ -54,27 +57,15 @@ namespace entity
 		the_ball,
 		left_goal,
 		right_goal,
-		center_spot,
-		center_top,
-		center_bottom,
-		center_left,
-		center_right,
-		half_line_top,
-		half_line_bottom,
-		corner_top_left,
-		corner_bottom_left,
-		corner_top_right,
-		corner_bottom_right,
-		left_penalty_spot,
-		left_penalty_top_left,
-		left_penalty_top_right,
-		left_penalty_bottom_left,
-		left_penalty_bottom_right,
-		right_penalty_spot,
-		right_penalty_top_left,
-		right_penalty_top_right,
-		right_penalty_bottom_left,
-		right_penalty_bottom_right,
+		spot,
+		top,
+		bottom,
+		left,
+		right,
+		top_left,
+		top_right,
+		bottom_left,
+		bottom_right
 	};
 	void config_fixture(b2FixtureDef& def, const type& type, const id& id);
 	inline type get_type(const b2Fixture& fixture) { return static_cast<type>(fixture.GetFilterData().categoryBits); }
@@ -711,7 +702,7 @@ goal::~goal() noexcept
 class field_sensor
 {
 public:
-	field_sensor(b2World& world, entity::id id, const b2Vec2& position);
+	field_sensor(b2World& world, entity::type, entity::id id, const b2Vec2& position);
 	~field_sensor() noexcept;
 private:
 	b2World& world_;
@@ -719,7 +710,7 @@ private:
 	b2Fixture* fixture_;
 };
 
-field_sensor::field_sensor(b2World& world, entity::id id, const b2Vec2& position)
+field_sensor::field_sensor(b2World& world, entity::type type, entity::id id, const b2Vec2& position)
 	:
 		world_(world),
 		body_(nullptr),
@@ -737,7 +728,7 @@ field_sensor::field_sensor(b2World& world, entity::id id, const b2Vec2& position
 	b2FixtureDef fixture_def;
 	fixture_def.shape = &sensor;
 	fixture_def.isSensor = true;
-	entity::config_fixture(fixture_def, entity::field_sensor, id);
+	entity::config_fixture(fixture_def, type, id);
 	fixture_def.filter.maskBits = entity::player_sensor;
 	fixture_ = body_->CreateFixture(&fixture_def);
 }
@@ -753,6 +744,92 @@ field_sensor::~field_sensor() noexcept
 		// do nothing
 	}
 }
+
+struct center_circle
+{
+	center_circle() = delete;
+	center_circle(b2World& world, const b2Vec2& center_position, std::uint8_t radius = 20U);
+	field_sensor spot;
+	field_sensor top;
+	field_sensor left;
+	field_sensor right;
+	field_sensor bottom;
+};
+
+center_circle::center_circle(b2World& world, const b2Vec2& center_position, std::uint8_t radius)
+	:
+		spot(world, entity::center_circle, entity::spot, center_position),
+		top(world, entity::center_circle, entity::top, b2Vec2(center_position.x, center_position.y - radius)),
+		left(world, entity::center_circle, entity::left, b2Vec2(center_position.x - radius, center_position.y)),
+		right(world, entity::center_circle, entity::right, b2Vec2(center_position.x + radius, center_position.y)),
+		bottom(world, entity::center_circle, entity::bottom, b2Vec2(center_position.x, center_position.y + radius))
+{}
+
+struct boundary
+{
+	boundary() = delete;
+	explicit boundary(b2World& world);
+	field_sensor top_left;
+	field_sensor top_right;
+	field_sensor bottom_left;
+	field_sensor bottom_right;
+};
+
+boundary::boundary(b2World& world)
+	:
+		top_left(world, entity::boundary, entity::top_left, b2Vec2(-120, 135)),
+		top_right(world, entity::boundary, entity::top_right, b2Vec2(120, 135)),
+		bottom_left(world, entity::boundary, entity::bottom_left, b2Vec2(-120, 15)),
+		bottom_right(world, entity::boundary, entity::bottom_right, b2Vec2(120, 15))
+{}
+
+struct penalty_box
+{
+	penalty_box() = delete;
+	penalty_box(b2World& world, entity::type type);
+	float orientation;
+	field_sensor spot;
+	field_sensor top_left;
+	field_sensor top_right;
+	field_sensor bottom_left;
+	field_sensor bottom_right;
+	field_sensor half_line_top;
+	field_sensor half_line_bottom;
+};
+
+penalty_box::penalty_box(b2World& world, entity::type type)
+	:
+		orientation((type == entity::left_penalty_box) ? -1 : 1),
+		spot(world, type, entity::spot, b2Vec2(95 * orientation, 75)),
+		top_left(world, type, entity::top_left, b2Vec2(120 * orientation, 115)),
+		top_right(world, type, entity::top_right, b2Vec2(80 * orientation, 115)),
+		bottom_left(world, type, entity::bottom_left, b2Vec2(120 * orientation, 35)),
+		bottom_right(world, type, entity::bottom_right, b2Vec2(80 * orientation, 35)),
+		half_line_top(world, type, entity::top, b2Vec2(0, 135)),
+		half_line_bottom(world, type, entity::bottom, b2Vec2(0, 15))
+{}
+
+struct field
+{
+	field() = delete;
+	explicit field(b2World& world);
+	goal left_goal;
+	goal right_goal;
+	center_circle center;
+	boundary boundary;
+	penalty_box left_penalty;
+	penalty_box right_penalty;
+};
+
+field::field(b2World& world)
+	:
+		left_goal(world, entity::left_goal, b2Vec2(-120, 75)),
+		right_goal(world, entity::right_goal, b2Vec2(120, 75)),
+		center(world, b2Vec2(0, 75)),
+		boundary(world),
+		left_penalty(world, entity::left_penalty_box),
+		right_penalty(world, entity::right_penalty_box)
+{}
 
 struct sensor_event
 {
@@ -801,29 +878,7 @@ private:
 	ball ball_;
 	player player_a1_;
 	player player_b1_;
-	goal left_goal_;
-	goal right_goal_;
-	field_sensor center_spot_;
-	field_sensor center_top_;
-	field_sensor center_bottom_;
-	field_sensor center_left_;
-	field_sensor center_right_;
-	field_sensor half_line_top_;
-	field_sensor half_line_bottom_;
-	field_sensor corner_top_left_;
-	field_sensor corner_top_right_;
-	field_sensor corner_bottom_left_;
-	field_sensor corner_bottom_right_;
-	field_sensor left_penalty_spot_;
-	field_sensor left_penalty_top_left_;
-	field_sensor left_penalty_top_right_;
-	field_sensor left_penalty_bottom_left_;
-	field_sensor left_penalty_bottom_right_;
-	field_sensor right_penalty_spot_;
-	field_sensor right_penalty_top_left_;
-	field_sensor right_penalty_top_right_;
-	field_sensor right_penalty_bottom_left_;
-	field_sensor right_penalty_bottom_right_;
+	field field_;
 	contact_listener listener_;
 	std::uint8_t score_;
 	sensor_event event_;
@@ -835,29 +890,7 @@ football::football()
 		ball_(*m_world, b2Vec2(0, 75)),
 		player_a1_(*m_world, entity::alpha_1, b2Vec2(-20, 15)),
 		player_b1_(*m_world, entity::beta_1, b2Vec2(20, 15)),
-		left_goal_(*m_world, entity::left_goal, b2Vec2(-120, 75)),
-		right_goal_(*m_world, entity::right_goal, b2Vec2(120, 75)),
-		center_spot_(*m_world, entity::center_spot, b2Vec2(0, 75)),
-		center_top_(*m_world, entity::center_top, b2Vec2(0, 55)),
-		center_bottom_(*m_world, entity::center_bottom, b2Vec2(0, 95)),
-		center_left_(*m_world, entity::center_left, b2Vec2(-20, 75)),
-		center_right_(*m_world, entity::center_right, b2Vec2(20, 75)),
-		half_line_top_(*m_world, entity::half_line_top, b2Vec2(0, 135)),
-		half_line_bottom_(*m_world, entity::half_line_bottom, b2Vec2(0, 15)),
-		corner_top_left_(*m_world, entity::corner_top_left, b2Vec2(-120, 135)),
-		corner_top_right_(*m_world, entity::corner_top_right, b2Vec2(120, 135)),
-		corner_bottom_left_(*m_world, entity::corner_bottom_left, b2Vec2(-120, 15)),
-		corner_bottom_right_(*m_world, entity::corner_bottom_right, b2Vec2(120, 15)),
-		left_penalty_spot_(*m_world, entity::left_penalty_spot, b2Vec2(-95, 75)),
-		left_penalty_top_left_(*m_world, entity::left_penalty_top_left, b2Vec2(-120, 115)),
-		left_penalty_top_right_(*m_world, entity::left_penalty_top_right, b2Vec2(-80, 115)),
-		left_penalty_bottom_left_(*m_world, entity::left_penalty_bottom_left, b2Vec2(-120, 35)),
-		left_penalty_bottom_right_(*m_world, entity::left_penalty_bottom_right, b2Vec2(-80, 35)),
-		right_penalty_spot_(*m_world, entity::left_penalty_spot, b2Vec2(95, 75)),
-		right_penalty_top_left_(*m_world, entity::left_penalty_top_left, b2Vec2(80, 115)),
-		right_penalty_top_right_(*m_world, entity::left_penalty_top_right, b2Vec2(120, 115)),
-		right_penalty_bottom_left_(*m_world, entity::left_penalty_bottom_left, b2Vec2(80, 35)),
-		right_penalty_bottom_right_(*m_world, entity::left_penalty_bottom_right, b2Vec2(120, 35)),
+		field_(*m_world),
 		listener_(*this),
 		score_(0),
 		event_()
