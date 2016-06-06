@@ -27,6 +27,7 @@ namespace entity
 		player_sensor,
 		center_circle,
 		boundary,
+		boundary_sensor,
 		left_penalty_box,
 		right_penalty_box
 	};
@@ -773,6 +774,14 @@ struct boundary
 	field_sensor top_right;
 	field_sensor bottom_left;
 	field_sensor bottom_right;
+	b2Fixture* top_sensor;
+	b2Fixture* left_top_sensor;
+	b2Fixture* left_bottom_sensor;
+	b2Fixture* right_top_sensor;
+	b2Fixture* right_bottom_sensor;
+	b2Fixture* bottom_sensor;
+private:
+	b2Body* body_;
 };
 
 boundary::boundary(b2World& world)
@@ -780,8 +789,111 @@ boundary::boundary(b2World& world)
 		top_left(world, entity::boundary, entity::top_left, b2Vec2(-120, 135)),
 		top_right(world, entity::boundary, entity::top_right, b2Vec2(120, 135)),
 		bottom_left(world, entity::boundary, entity::bottom_left, b2Vec2(-120, 15)),
-		bottom_right(world, entity::boundary, entity::bottom_right, b2Vec2(120, 15))
-{}
+		bottom_right(world, entity::boundary, entity::bottom_right, b2Vec2(120, 15)),
+		top_sensor(nullptr),
+		left_top_sensor(nullptr),
+		left_bottom_sensor(nullptr),
+		right_top_sensor(nullptr),
+		right_bottom_sensor(nullptr),
+		bottom_sensor(nullptr),
+		body_(nullptr)
+{
+	b2BodyDef body_def;
+	body_def.type = b2_staticBody;
+	body_def.position.Set(0, 0);
+	body_def.angle = 0;
+	body_ = world.CreateBody(&body_def);
+
+	std::array<b2Vec2, 4> top_vertices;
+	top_vertices[0].Set(-122, 139);
+	top_vertices[1].Set(122, 139);
+	top_vertices[2].Set(122, 137);
+	top_vertices[3].Set(-122, 137);
+	b2PolygonShape top_box;
+	top_box.Set(top_vertices.data(), top_vertices.max_size());
+	b2FixtureDef top_def;
+	top_def.shape = &top_box;
+	top_def.density = 0;
+	top_def.isSensor = true;
+	entity::config_fixture(top_def, entity::boundary_sensor, entity::top);
+	top_def.filter.maskBits = entity::ball;
+	top_sensor = body_->CreateFixture(&top_def);
+
+	std::array<b2Vec2, 4> left_top_vertices;
+	left_top_vertices[0].Set(-124, 139);
+	left_top_vertices[1].Set(-122, 139);
+	left_top_vertices[2].Set(-122, 87);
+	left_top_vertices[3].Set(-124, 87);
+	b2PolygonShape left_top_box;
+	left_top_box.Set(left_top_vertices.data(), left_top_vertices.max_size());
+	b2FixtureDef left_top_def;
+	left_top_def.shape = &left_top_box;
+	left_top_def.density = 0;
+	left_top_def.isSensor = true;
+	entity::config_fixture(left_top_def, entity::boundary_sensor, entity::top_left);
+	left_top_def.filter.maskBits = entity::ball;
+	left_top_sensor = body_->CreateFixture(&left_top_def);
+
+	std::array<b2Vec2, 4> left_bottom_vertices;
+	left_bottom_vertices[0].Set(-124, 63);
+	left_bottom_vertices[1].Set(-122, 63);
+	left_bottom_vertices[2].Set(-122, 11);
+	left_bottom_vertices[3].Set(-124, 11);
+	b2PolygonShape left_bottom_box;
+	left_bottom_box.Set(left_bottom_vertices.data(), left_bottom_vertices.max_size());
+	b2FixtureDef left_bottom_def;
+	left_bottom_def.shape = &left_bottom_box;
+	left_bottom_def.density = 0;
+	left_bottom_def.isSensor = true;
+	entity::config_fixture(left_bottom_def, entity::boundary_sensor, entity::bottom_left);
+	left_bottom_def.filter.maskBits = entity::ball;
+	left_bottom_sensor = body_->CreateFixture(&left_bottom_def);
+
+	std::array<b2Vec2, 4> right_top_vertices;
+	right_top_vertices[0].Set(122, 139);
+	right_top_vertices[1].Set(124, 139);
+	right_top_vertices[2].Set(124, 87);
+	right_top_vertices[3].Set(122, 87);
+	b2PolygonShape right_top_box;
+	right_top_box.Set(right_top_vertices.data(), right_top_vertices.max_size());
+	b2FixtureDef right_top_def;
+	right_top_def.shape = &right_top_box;
+	right_top_def.density = 0;
+	right_top_def.isSensor = true;
+	entity::config_fixture(right_top_def, entity::boundary_sensor, entity::top_right);
+	right_top_def.filter.maskBits = entity::ball;
+	right_top_sensor = body_->CreateFixture(&right_top_def);
+
+	std::array<b2Vec2, 4> right_bottom_vertices;
+	right_bottom_vertices[0].Set(122, 63);
+	right_bottom_vertices[1].Set(124, 63);
+	right_bottom_vertices[2].Set(124, 11);
+	right_bottom_vertices[3].Set(122, 11);
+	b2PolygonShape right_bottom_box;
+	right_bottom_box.Set(right_bottom_vertices.data(), right_bottom_vertices.max_size());
+	b2FixtureDef right_bottom_def;
+	right_bottom_def.shape = &right_bottom_box;
+	right_bottom_def.density = 0;
+	right_bottom_def.isSensor = true;
+	entity::config_fixture(right_bottom_def, entity::boundary_sensor, entity::bottom_right);
+	right_bottom_def.filter.maskBits = entity::ball;
+	right_bottom_sensor = body_->CreateFixture(&right_bottom_def);
+
+	std::array<b2Vec2, 4> bottom_vertices;
+	bottom_vertices[0].Set(-122, 13);
+	bottom_vertices[1].Set(122, 13);
+	bottom_vertices[2].Set(122, 11);
+	bottom_vertices[3].Set(-122, 11);
+	b2PolygonShape bottom_box;
+	bottom_box.Set(bottom_vertices.data(), bottom_vertices.max_size());
+	b2FixtureDef bottom_def;
+	bottom_def.shape = &bottom_box;
+	bottom_def.density = 0;
+	bottom_def.isSensor = true;
+	entity::config_fixture(bottom_def, entity::boundary_sensor, entity::bottom);
+	bottom_def.filter.maskBits = entity::ball;
+	bottom_sensor = body_->CreateFixture(&bottom_def);
+}
 
 struct penalty_box
 {
