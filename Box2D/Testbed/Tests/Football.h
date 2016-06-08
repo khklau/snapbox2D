@@ -4,6 +4,7 @@
 #include <array>
 #include <limits>
 #include <type_traits>
+#include <stdexcept>
 #include "../Framework/Test.h"
 #include "../Box2D/Box2D/Dynamics/b2World.h"
 #include "../Box2D/Box2D/Collision/Shapes/b2CircleShape.h"
@@ -68,14 +69,55 @@ namespace entity
 		bottom_left,
 		bottom_right
 	};
+	inline decltype(b2Filter::categoryBits) type2category(entity::type type) { return 1 << (type - 1U); }
+	entity::type category2type(decltype(b2Filter::categoryBits) category);
 	void config_fixture(b2FixtureDef& def, const type& type, const id& id);
-	inline type get_type(const b2Fixture& fixture) { return static_cast<type>(fixture.GetFilterData().categoryBits); }
+	inline type get_type(const b2Fixture& fixture) { return category2type(fixture.GetFilterData().categoryBits); }
 	inline id get_id(const b2Fixture& fixture) { return static_cast<id>(fixture.GetFilterData().groupIndex * -1); }
+}
+
+entity::type entity::category2type(decltype(b2Filter::categoryBits) category)
+{
+	switch (category)
+	{
+		case 2U:
+			return static_cast<entity::type>(1U + 1U);
+		case 4U:
+			return static_cast<entity::type>(2U + 1U);
+		case 8U:
+			return static_cast<entity::type>(3U + 1U);
+		case 16U:
+			return static_cast<entity::type>(4U + 1U);
+		case 32U:
+			return static_cast<entity::type>(5U + 1U);
+		case 64U:
+			return static_cast<entity::type>(6U + 1U);
+		case 128U:
+			return static_cast<entity::type>(7U + 1U);
+		case 256U:
+			return static_cast<entity::type>(8U + 1U);
+		case 512U:
+			return static_cast<entity::type>(9U + 1U);
+		case 1024U:
+			return static_cast<entity::type>(10U + 1U);
+		case 2048U:
+			return static_cast<entity::type>(11U + 1U);
+		case 4096U:
+			return static_cast<entity::type>(12U + 1U);
+		case 8192U:
+			return static_cast<entity::type>(13U + 1U);
+		case 16384U:
+			return static_cast<entity::type>(14U + 1U);
+		case 32768U:
+			return static_cast<entity::type>(15U + 1U);
+		default:
+			throw std::out_of_range("Not within entity::type range");
+	}
 }
 
 void entity::config_fixture(b2FixtureDef& def, const type& type, const id& id)
 {
-	def.filter.categoryBits = type;
+	def.filter.categoryBits = type2category(type);
 	def.filter.groupIndex = id * -1;
 }
 
@@ -208,6 +250,7 @@ public:
 	~head() noexcept;
 	inline b2Body& get_body(const head_key&) { return *body_; }
 private:
+	static decltype(b2Filter::maskBits) not_sensor_mask();
 	b2World& world_;
 	b2Body* body_;
 	b2Fixture* head_fixture_;
@@ -261,7 +304,7 @@ head::head(b2World& world, entity::id id, const b2Vec2& position, std::size_t vi
 	vision1_fix_def.density = 0;
 	vision1_fix_def.isSensor = true;
 	entity::config_fixture(vision1_fix_def, entity::player_sensor, id);
-	vision1_fix_def.filter.maskBits = std::numeric_limits<std::underlying_type<entity::type>::type>::max();
+	vision1_fix_def.filter.maskBits = not_sensor_mask();
 	vision1_fixture_ = body_->CreateFixture(&vision1_fix_def);
 
 	b2PolygonShape arc2;
@@ -278,7 +321,7 @@ head::head(b2World& world, entity::id id, const b2Vec2& position, std::size_t vi
 	vision2_fix_def.density = 0;
 	vision2_fix_def.isSensor = true;
 	entity::config_fixture(vision2_fix_def, entity::player_sensor, id);
-	vision2_fix_def.filter.maskBits = std::numeric_limits<std::underlying_type<entity::type>::type>::max();
+	vision2_fix_def.filter.maskBits = not_sensor_mask();
 	vision2_fixture_ = body_->CreateFixture(&vision2_fix_def);
 	
 	b2PolygonShape arc3;
@@ -295,7 +338,7 @@ head::head(b2World& world, entity::id id, const b2Vec2& position, std::size_t vi
 	vision3_fix_def.density = 0;
 	vision3_fix_def.isSensor = true;
 	entity::config_fixture(vision3_fix_def, entity::player_sensor, id);
-	vision3_fix_def.filter.maskBits = std::numeric_limits<std::underlying_type<entity::type>::type>::max();
+	vision3_fix_def.filter.maskBits = not_sensor_mask();
 	vision3_fixture_ = body_->CreateFixture(&vision3_fix_def);
 
 	b2PolygonShape arc4;
@@ -312,7 +355,7 @@ head::head(b2World& world, entity::id id, const b2Vec2& position, std::size_t vi
 	vision4_fix_def.density = 0;
 	vision4_fix_def.isSensor = true;
 	entity::config_fixture(vision4_fix_def, entity::player_sensor, id);
-	vision4_fix_def.filter.maskBits = std::numeric_limits<std::underlying_type<entity::type>::type>::max();
+	vision4_fix_def.filter.maskBits = not_sensor_mask();
 	vision4_fixture_ = body_->CreateFixture(&vision4_fix_def);
 
 	b2MassData mass;
@@ -331,6 +374,14 @@ head::~head() noexcept
 	{
 		// do nothing
 	}
+}
+
+decltype(b2Filter::maskBits) head::not_sensor_mask()
+{
+	return std::numeric_limits<std::underlying_type<entity::type>::type>::max()
+			& ~entity::type2category(entity::boundary_sensor)
+			& ~entity::type2category(entity::goal_sensor)
+			& ~entity::type2category(entity::player_sensor);
 }
 
 struct foot_key
@@ -684,7 +735,7 @@ goal::goal(b2World& world, entity::id id, const b2Vec2& position)
 	sensor_def.density = 0;
 	sensor_def.isSensor = true;
 	entity::config_fixture(sensor_def, entity::goal_sensor, id);
-	sensor_def.filter.maskBits = entity::ball;
+	sensor_def.filter.maskBits = entity::type2category(entity::ball);
 	sensor_ = body_->CreateFixture(&sensor_def);
 }
 
@@ -730,7 +781,7 @@ field_sensor::field_sensor(b2World& world, entity::type type, entity::id id, con
 	fixture_def.shape = &sensor;
 	fixture_def.isSensor = true;
 	entity::config_fixture(fixture_def, type, id);
-	fixture_def.filter.maskBits = entity::player_sensor;
+	fixture_def.filter.maskBits = entity::type2category(entity::player_sensor);
 	fixture_ = body_->CreateFixture(&fixture_def);
 }
 
@@ -774,6 +825,8 @@ struct boundary
 	field_sensor top_right;
 	field_sensor bottom_left;
 	field_sensor bottom_right;
+	field_sensor half_line_top;
+	field_sensor half_line_bottom;
 	b2Fixture* top_sensor;
 	b2Fixture* left_top_sensor;
 	b2Fixture* left_bottom_sensor;
@@ -790,6 +843,8 @@ boundary::boundary(b2World& world)
 		top_right(world, entity::boundary, entity::top_right, b2Vec2(120, 135)),
 		bottom_left(world, entity::boundary, entity::bottom_left, b2Vec2(-120, 15)),
 		bottom_right(world, entity::boundary, entity::bottom_right, b2Vec2(120, 15)),
+		half_line_top(world, entity::boundary, entity::top, b2Vec2(0, 135)),
+		half_line_bottom(world, entity::boundary, entity::bottom, b2Vec2(0, 15)),
 		top_sensor(nullptr),
 		left_top_sensor(nullptr),
 		left_bottom_sensor(nullptr),
@@ -816,7 +871,7 @@ boundary::boundary(b2World& world)
 	top_def.density = 0;
 	top_def.isSensor = true;
 	entity::config_fixture(top_def, entity::boundary_sensor, entity::top);
-	top_def.filter.maskBits = entity::ball;
+	top_def.filter.maskBits = entity::type2category(entity::ball);
 	top_sensor = body_->CreateFixture(&top_def);
 
 	std::array<b2Vec2, 4> left_top_vertices;
@@ -831,7 +886,7 @@ boundary::boundary(b2World& world)
 	left_top_def.density = 0;
 	left_top_def.isSensor = true;
 	entity::config_fixture(left_top_def, entity::boundary_sensor, entity::top_left);
-	left_top_def.filter.maskBits = entity::ball;
+	left_top_def.filter.maskBits = entity::type2category(entity::ball);
 	left_top_sensor = body_->CreateFixture(&left_top_def);
 
 	std::array<b2Vec2, 4> left_bottom_vertices;
@@ -846,7 +901,7 @@ boundary::boundary(b2World& world)
 	left_bottom_def.density = 0;
 	left_bottom_def.isSensor = true;
 	entity::config_fixture(left_bottom_def, entity::boundary_sensor, entity::bottom_left);
-	left_bottom_def.filter.maskBits = entity::ball;
+	left_bottom_def.filter.maskBits = entity::type2category(entity::ball);
 	left_bottom_sensor = body_->CreateFixture(&left_bottom_def);
 
 	std::array<b2Vec2, 4> right_top_vertices;
@@ -861,7 +916,7 @@ boundary::boundary(b2World& world)
 	right_top_def.density = 0;
 	right_top_def.isSensor = true;
 	entity::config_fixture(right_top_def, entity::boundary_sensor, entity::top_right);
-	right_top_def.filter.maskBits = entity::ball;
+	right_top_def.filter.maskBits = entity::type2category(entity::ball);
 	right_top_sensor = body_->CreateFixture(&right_top_def);
 
 	std::array<b2Vec2, 4> right_bottom_vertices;
@@ -876,7 +931,7 @@ boundary::boundary(b2World& world)
 	right_bottom_def.density = 0;
 	right_bottom_def.isSensor = true;
 	entity::config_fixture(right_bottom_def, entity::boundary_sensor, entity::bottom_right);
-	right_bottom_def.filter.maskBits = entity::ball;
+	right_bottom_def.filter.maskBits = entity::type2category(entity::ball);
 	right_bottom_sensor = body_->CreateFixture(&right_bottom_def);
 
 	std::array<b2Vec2, 4> bottom_vertices;
@@ -891,7 +946,7 @@ boundary::boundary(b2World& world)
 	bottom_def.density = 0;
 	bottom_def.isSensor = true;
 	entity::config_fixture(bottom_def, entity::boundary_sensor, entity::bottom);
-	bottom_def.filter.maskBits = entity::ball;
+	bottom_def.filter.maskBits = entity::type2category(entity::ball);
 	bottom_sensor = body_->CreateFixture(&bottom_def);
 }
 
@@ -905,8 +960,6 @@ struct penalty_box
 	field_sensor top_right;
 	field_sensor bottom_left;
 	field_sensor bottom_right;
-	field_sensor half_line_top;
-	field_sensor half_line_bottom;
 };
 
 penalty_box::penalty_box(b2World& world, entity::type type)
@@ -916,9 +969,7 @@ penalty_box::penalty_box(b2World& world, entity::type type)
 		top_left(world, type, entity::top_left, b2Vec2(120 * orientation, 115)),
 		top_right(world, type, entity::top_right, b2Vec2(80 * orientation, 115)),
 		bottom_left(world, type, entity::bottom_left, b2Vec2(120 * orientation, 35)),
-		bottom_right(world, type, entity::bottom_right, b2Vec2(80 * orientation, 35)),
-		half_line_top(world, type, entity::top, b2Vec2(0, 135)),
-		half_line_bottom(world, type, entity::bottom, b2Vec2(0, 15))
+		bottom_right(world, type, entity::bottom_right, b2Vec2(80 * orientation, 35))
 {}
 
 struct field
