@@ -177,7 +177,7 @@ struct torso_key
 class torso
 {
 public:
-	torso(b2World& world, entity::id id, const b2Vec2& position);
+	torso(b2World& world, entity::id id, const b2Vec2& position, const std::uint16_t degree);
 	~torso() noexcept;
 	inline b2Body& get_body(const torso_key&) { return *body_; }
 private:
@@ -186,7 +186,7 @@ private:
 	b2Fixture* fixture_;
 };
 
-torso::torso(b2World& world, entity::id id, const b2Vec2& position)
+torso::torso(b2World& world, entity::id id, const b2Vec2& position, const std::uint16_t degree)
 	:
 		world_(world),
 		body_(nullptr),
@@ -194,8 +194,6 @@ torso::torso(b2World& world, entity::id id, const b2Vec2& position)
 {
 	b2BodyDef body_def;
 	body_def.type = b2_dynamicBody;
-	body_def.position.Set(position.x, position.y);
-	body_def.angle = 0 * deg2rad;
 	body_def.linearDamping = 0.15f;
 	body_def.angularDamping = 0.15f;
 	body_ = world_.CreateBody(&body_def);
@@ -224,6 +222,7 @@ torso::torso(b2World& world, entity::id id, const b2Vec2& position)
 	body_->GetMassData(&mass);
 	mass.I = 1.0f;
 	body_->SetMassData(&mass);
+	body_->SetTransform(position, degree * deg2rad);
 }
 
 torso::~torso() noexcept
@@ -246,7 +245,7 @@ struct head_key
 class head
 {
 public:
-	head(b2World& world, entity::id id, const b2Vec2& position, std::size_t vision_radius = 60U, std::size_t vision_degree = 120U);
+	head(b2World& world, entity::id id, const b2Vec2& position, const std::uint16_t degree, std::size_t vision_radius = 60U, std::size_t vision_degree = 120U);
 	~head() noexcept;
 	inline b2Body& get_body(const head_key&) { return *body_; }
 private:
@@ -260,7 +259,7 @@ private:
 	b2Fixture* vision4_fixture_;
 };
 
-head::head(b2World& world, entity::id id, const b2Vec2& position, std::size_t vision_radius, std::size_t vision_degree)
+head::head(b2World& world, entity::id id, const b2Vec2& position, const std::uint16_t degree, std::size_t vision_radius, std::size_t vision_degree)
 	:
 		world_(world),
 		body_(nullptr),
@@ -272,8 +271,6 @@ head::head(b2World& world, entity::id id, const b2Vec2& position, std::size_t vi
 {
 	b2BodyDef body_def;
 	body_def.type = b2_dynamicBody;
-	body_def.position.Set(position.x, position.y);
-	body_def.angle = 0 * deg2rad;
 	body_def.linearDamping = 0.15f;
 	body_def.angularDamping = 0.15f;
 	body_ = world_.CreateBody(&body_def);
@@ -362,6 +359,7 @@ head::head(b2World& world, entity::id id, const b2Vec2& position, std::size_t vi
 	body_->GetMassData(&mass);
 	mass.I = 1.0f;
 	body_->SetMassData(&mass);
+	body_->SetTransform(position, degree * deg2rad);
 }
 
 head::~head() noexcept
@@ -392,7 +390,7 @@ struct foot_key
 class foot
 {
 public:
-	foot(b2World& world, entity::id id, const b2Vec2& position);
+	foot(b2World& world, entity::id id, const b2Vec2& position, const std::uint16_t degree);
 	~foot() noexcept;
 	inline b2Body& get_body(const foot_key&) { return *body_; }
 private:
@@ -401,7 +399,7 @@ private:
 	b2Fixture* fixture_;
 };
 
-foot::foot(b2World& world, entity::id id, const b2Vec2& position)
+foot::foot(b2World& world, entity::id id, const b2Vec2& position, const std::uint16_t degree)
 	:
 		world_(world),
 		body_(nullptr),
@@ -409,8 +407,6 @@ foot::foot(b2World& world, entity::id id, const b2Vec2& position)
 {
 	b2BodyDef body_def;
 	body_def.type = b2_dynamicBody;
-	body_def.position.Set(position.x, position.y);
-	body_def.angle = 0 * deg2rad;
 	body_def.linearDamping = 0.15f;
 	body_def.angularDamping = 0.15f;
 	body_ = world_.CreateBody(&body_def);
@@ -434,6 +430,7 @@ foot::foot(b2World& world, entity::id id, const b2Vec2& position)
 	body_->GetMassData(&mass);
 	mass.I = 1.0f;
 	body_->SetMassData(&mass);
+	body_->SetTransform(position, degree * deg2rad);
 }
 
 foot::~foot() noexcept
@@ -597,7 +594,7 @@ void hip::turn(std::int16_t velocity)
 class player
 {
 public:
-	player(b2World& world, entity::id id, const b2Vec2& position);
+	player(b2World& world, entity::id id, const b2Vec2& position, const std::uint16_t degree);
 	inline void run(std::int16_t velocity) { neck_.run(velocity); hip_.run(velocity); }
 	inline void turn_head(std::int16_t velocity) { neck_.turn(velocity); }
 	inline void turn_torso(std::int16_t velocity) { hip_.turn(velocity); }
@@ -617,12 +614,12 @@ private:
 	hip hip_;
 };
 
-player::player(b2World& world, entity::id id, const b2Vec2& position)
+player::player(b2World& world, entity::id id, const b2Vec2& position, const std::uint16_t degree)
 	:
 		id_(id),
-		torso_(world, id_, position),
-		head_(world, id_, position),
-		foot_(world, id_, position),
+		torso_(world, id_, position, degree),
+		head_(world, id_, position, degree),
+		foot_(world, id_, position, degree),
 		neck_(world, torso_, head_),
 		hip_(world, torso_, foot_)
 {}
@@ -1039,8 +1036,28 @@ private:
 		football& football_;
 	};
 	ball ball_;
-	player player_a1_;
-	player player_b1_;
+	player player_a01_;
+	player player_a02_;
+	player player_a03_;
+	player player_a04_;
+	player player_a05_;
+	player player_a06_;
+	player player_a07_;
+	player player_a08_;
+	player player_a09_;
+	player player_a10_;
+	player player_a11_;
+	player player_b01_;
+	player player_b02_;
+	player player_b03_;
+	player player_b04_;
+	player player_b05_;
+	player player_b06_;
+	player player_b07_;
+	player player_b08_;
+	player player_b09_;
+	player player_b10_;
+	player player_b11_;
 	field field_;
 	contact_listener listener_;
 	std::uint8_t score_;
@@ -1051,8 +1068,28 @@ football::football()
 	:
 		Test(),
 		ball_(*m_world, b2Vec2(0, 75)),
-		player_a1_(*m_world, entity::alpha_1, b2Vec2(-20, 15)),
-		player_b1_(*m_world, entity::beta_1, b2Vec2(20, 15)),
+		player_a01_(*m_world, entity::alpha_1, b2Vec2(-10, 15), 90U),
+		player_a02_(*m_world, entity::alpha_2, b2Vec2(-20, 15), 90U),
+		player_a03_(*m_world, entity::alpha_3, b2Vec2(-30, 15), 90U),
+		player_a04_(*m_world, entity::alpha_4, b2Vec2(-40, 15), 90U),
+		player_a05_(*m_world, entity::alpha_5, b2Vec2(-50, 15), 90U),
+		player_a06_(*m_world, entity::alpha_6, b2Vec2(-60, 15), 90U),
+		player_a07_(*m_world, entity::alpha_7, b2Vec2(-70, 15), 90U),
+		player_a08_(*m_world, entity::alpha_8, b2Vec2(-80, 15), 90U),
+		player_a09_(*m_world, entity::alpha_9, b2Vec2(-90, 15), 90U),
+		player_a10_(*m_world, entity::alpha_10, b2Vec2(-100, 15), 90U),
+		player_a11_(*m_world, entity::alpha_11, b2Vec2(-110, 15), 90U),
+		player_b01_(*m_world, entity::beta_1, b2Vec2(10, 15), 90U),
+		player_b02_(*m_world, entity::beta_2, b2Vec2(20, 15), 90U),
+		player_b03_(*m_world, entity::beta_3, b2Vec2(30, 15), 90U),
+		player_b04_(*m_world, entity::beta_4, b2Vec2(40, 15), 90U),
+		player_b05_(*m_world, entity::beta_5, b2Vec2(50, 15), 90U),
+		player_b06_(*m_world, entity::beta_6, b2Vec2(60, 15), 90U),
+		player_b07_(*m_world, entity::beta_7, b2Vec2(70, 15), 90U),
+		player_b08_(*m_world, entity::beta_8, b2Vec2(80, 15), 90U),
+		player_b09_(*m_world, entity::beta_9, b2Vec2(90, 15), 90U),
+		player_b10_(*m_world, entity::beta_10, b2Vec2(100, 15), 90U),
+		player_b11_(*m_world, entity::beta_11, b2Vec2(110, 15), 90U),
 		field_(*m_world),
 		listener_(*this),
 		score_(0),
@@ -1067,17 +1104,17 @@ void football::Step(Settings* settings)
 	Test::Step(settings);
 	g_debugDraw.DrawString(5, m_textLine, "Score: %d", score_);
 	m_textLine += DRAW_STRING_NEW_LINE;
-	g_debugDraw.DrawString(5, m_textLine, "Player head angle: %3.2f", player_a1_.get_head_angle() * rad2deg);
+	g_debugDraw.DrawString(5, m_textLine, "Player head angle: %3.2f", player_a01_.get_head_angle() * rad2deg);
 	m_textLine += DRAW_STRING_NEW_LINE;
-	g_debugDraw.DrawString(5, m_textLine, "Player head velocity: %3.2f", player_a1_.get_head_velocity());
+	g_debugDraw.DrawString(5, m_textLine, "Player head velocity: %3.2f", player_a01_.get_head_velocity());
 	m_textLine += DRAW_STRING_NEW_LINE;
-	g_debugDraw.DrawString(5, m_textLine, "Player torso angle: %3.2f", player_a1_.get_torso_angle() * rad2deg);
+	g_debugDraw.DrawString(5, m_textLine, "Player torso angle: %3.2f", player_a01_.get_torso_angle() * rad2deg);
 	m_textLine += DRAW_STRING_NEW_LINE;
-	g_debugDraw.DrawString(5, m_textLine, "Player torso angular velocity: %3.2f", player_a1_.get_torso_angular_velocity());
+	g_debugDraw.DrawString(5, m_textLine, "Player torso angular velocity: %3.2f", player_a01_.get_torso_angular_velocity());
 	m_textLine += DRAW_STRING_NEW_LINE;
-	g_debugDraw.DrawString(5, m_textLine, "Player foot translation: %3.2f", player_a1_.get_foot_translation());
+	g_debugDraw.DrawString(5, m_textLine, "Player foot translation: %3.2f", player_a01_.get_foot_translation());
 	m_textLine += DRAW_STRING_NEW_LINE;
-	g_debugDraw.DrawString(5, m_textLine, "Player foot speed: %3.2f", player_a1_.get_foot_speed());
+	g_debugDraw.DrawString(5, m_textLine, "Player foot speed: %3.2f", player_a01_.get_foot_speed());
 	m_textLine += DRAW_STRING_NEW_LINE;
 	g_debugDraw.DrawString(5, m_textLine, "Sensed entity id: %d", event_.id);
 	m_textLine += DRAW_STRING_NEW_LINE;
@@ -1094,28 +1131,28 @@ void football::Keyboard(int key)
 	switch (key)
 	{
 		case GLFW_KEY_Q:
-			player_a1_.turn_head(100);
+			player_a01_.turn_head(100);
 			break;
 		case GLFW_KEY_E:
-			player_a1_.turn_head(-100);
+			player_a01_.turn_head(-100);
 			break;
 		case GLFW_KEY_W:
-			player_a1_.run(8000);
+			player_a01_.run(8000);
 			break;
 		case GLFW_KEY_S:
-			player_a1_.run(-8000);
+			player_a01_.run(-8000);
 			break;
 		case GLFW_KEY_A:
-			player_a1_.turn_torso(200);
+			player_a01_.turn_torso(200);
 			break;
 		case GLFW_KEY_D:
-			player_a1_.turn_torso(-200);
+			player_a01_.turn_torso(-200);
 			break;
 		case GLFW_KEY_3:
-			player_a1_.kick(8000);
+			player_a01_.kick(8000);
 			break;
 		case GLFW_KEY_1:
-			player_a1_.kick(-8000);
+			player_a01_.kick(-8000);
 			break;
 	}
 }
