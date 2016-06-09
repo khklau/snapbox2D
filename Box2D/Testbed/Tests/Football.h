@@ -245,7 +245,7 @@ struct head_key
 class head
 {
 public:
-	head(b2World& world, entity::id id, const b2Vec2& position, const std::uint16_t degree, std::size_t vision_radius = 60U, std::size_t vision_degree = 120U);
+	head(b2World& world, entity::id id, const b2Vec2& position, const std::uint16_t degree, std::size_t vision_radius = 360U, std::size_t vision_degree = 120U);
 	~head() noexcept;
 	inline b2Body& get_body(const head_key&) { return *body_; }
 private:
@@ -664,8 +664,8 @@ goal::goal(b2World& world, entity::id id, const b2Vec2& position)
 	}
 
 	std::array<b2Vec2, 2> back_vertices;
-	back_vertices[0].Set(-4.0 * orientation, 12.0 * orientation);
-	back_vertices[1].Set(-4.0 * orientation, -12.0 * orientation);
+	back_vertices[0].Set(-16.0 * orientation, 32.0 * orientation);
+	back_vertices[1].Set(-16.0 * orientation, -32.0 * orientation);
 	b2EdgeShape back_shape;
 	back_shape.Set(back_vertices[0], back_vertices[1]);
 	back_shape.m_hasVertex0 = false;
@@ -677,8 +677,8 @@ goal::goal(b2World& world, entity::id id, const b2Vec2& position)
 	back_net_ = body_->CreateFixture(&back_def);
 
 	std::array<b2Vec2, 2> left_vertices;
-	left_vertices[0].Set(-4.0 * orientation, 12.0 * orientation);
-	left_vertices[1].Set(-0.5 * orientation, 12.0 * orientation);
+	left_vertices[0].Set(-16.0 * orientation, 32.0 * orientation);
+	left_vertices[1].Set(-0.5 * orientation, 32.0 * orientation);
 	b2EdgeShape left_shape;
 	left_shape.Set(left_vertices[0], left_vertices[1]);
 	left_shape.m_hasVertex0 = false;
@@ -690,8 +690,8 @@ goal::goal(b2World& world, entity::id id, const b2Vec2& position)
 	left_net_ = body_->CreateFixture(&left_net_def);
 
 	std::array<b2Vec2, 2> right_vertices;
-	right_vertices[0].Set(-4.0 * orientation, -12.0 * orientation);
-	right_vertices[1].Set(-0.5 * orientation, -12.0 * orientation);
+	right_vertices[0].Set(-16.0 * orientation, -32.0 * orientation);
+	right_vertices[1].Set(-0.5 * orientation, -32.0 * orientation);
 	b2EdgeShape right_shape;
 	right_shape.Set(right_vertices[0], right_vertices[1]);
 	right_shape.m_hasVertex0 = false;
@@ -703,7 +703,7 @@ goal::goal(b2World& world, entity::id id, const b2Vec2& position)
 	right_net_ = body_->CreateFixture(&right_net_def);
 
 	b2CircleShape left_post;
-	left_post.m_p.Set(0.0, 12.0 * orientation);
+	left_post.m_p.Set(0.0, 32.0 * orientation);
 	left_post.m_radius = 0.5;
 	b2FixtureDef left_post_def;
 	left_post_def.shape = &left_post;
@@ -712,7 +712,7 @@ goal::goal(b2World& world, entity::id id, const b2Vec2& position)
 	left_post_ = body_->CreateFixture(&left_post_def);
 
 	b2CircleShape right_post;
-	right_post.m_p.Set(0.0, -12.0 * orientation);
+	right_post.m_p.Set(0.0, -32.0 * orientation);
 	right_post.m_radius = 0.5;
 	b2FixtureDef right_post_def;
 	right_post_def.shape = &right_post;
@@ -721,10 +721,10 @@ goal::goal(b2World& world, entity::id id, const b2Vec2& position)
 	right_post_ = body_->CreateFixture(&right_post_def);
 
 	std::array<b2Vec2, 4> sensor_vertices;
-	sensor_vertices[0].Set(-4.0 * orientation, 12.0 * orientation);
-	sensor_vertices[1].Set(-2.0 * orientation, 12.0 * orientation);
-	sensor_vertices[2].Set(-2.0 * orientation, -12.0 * orientation);
-	sensor_vertices[3].Set(-4.0 * orientation, -12.0 * orientation);
+	sensor_vertices[0].Set(-16.0 * orientation, 32.0 * orientation);
+	sensor_vertices[1].Set(-2.0 * orientation, 32.0 * orientation);
+	sensor_vertices[2].Set(-2.0 * orientation, -32.0 * orientation);
+	sensor_vertices[3].Set(-16.0 * orientation, -32.0 * orientation);
 	b2PolygonShape sensor_box;
 	sensor_box.Set(sensor_vertices.data(), sensor_vertices.max_size());
 	b2FixtureDef sensor_def;
@@ -797,7 +797,7 @@ field_sensor::~field_sensor() noexcept
 struct center_circle
 {
 	center_circle() = delete;
-	center_circle(b2World& world, const b2Vec2& center_position, std::uint8_t radius = 20U);
+	center_circle(b2World& world, const b2Vec2& center_position, std::uint8_t radius = 80U);
 	field_sensor spot;
 	field_sensor top;
 	field_sensor left;
@@ -836,12 +836,12 @@ private:
 
 boundary::boundary(b2World& world)
 	:
-		top_left(world, entity::boundary, entity::top_left, b2Vec2(-120, 135)),
-		top_right(world, entity::boundary, entity::top_right, b2Vec2(120, 135)),
-		bottom_left(world, entity::boundary, entity::bottom_left, b2Vec2(-120, 15)),
-		bottom_right(world, entity::boundary, entity::bottom_right, b2Vec2(120, 15)),
-		half_line_top(world, entity::boundary, entity::top, b2Vec2(0, 135)),
-		half_line_bottom(world, entity::boundary, entity::bottom, b2Vec2(0, 15)),
+		top_left(world, entity::boundary, entity::top_left, b2Vec2(-480, 660)),
+		top_right(world, entity::boundary, entity::top_right, b2Vec2(480, 660)),
+		bottom_left(world, entity::boundary, entity::bottom_left, b2Vec2(-480, 20)),
+		bottom_right(world, entity::boundary, entity::bottom_right, b2Vec2(480, 20)),
+		half_line_top(world, entity::boundary, entity::top, b2Vec2(0, 660)),
+		half_line_bottom(world, entity::boundary, entity::bottom, b2Vec2(0, 20)),
 		top_sensor(nullptr),
 		left_top_sensor(nullptr),
 		left_bottom_sensor(nullptr),
@@ -857,10 +857,10 @@ boundary::boundary(b2World& world)
 	body_ = world.CreateBody(&body_def);
 
 	std::array<b2Vec2, 4> top_vertices;
-	top_vertices[0].Set(-122, 139);
-	top_vertices[1].Set(122, 139);
-	top_vertices[2].Set(122, 137);
-	top_vertices[3].Set(-122, 137);
+	top_vertices[0].Set(-482, 664);
+	top_vertices[1].Set(482, 664);
+	top_vertices[2].Set(482, 662);
+	top_vertices[3].Set(-482, 662);
 	b2PolygonShape top_box;
 	top_box.Set(top_vertices.data(), top_vertices.max_size());
 	b2FixtureDef top_def;
@@ -872,10 +872,10 @@ boundary::boundary(b2World& world)
 	top_sensor = body_->CreateFixture(&top_def);
 
 	std::array<b2Vec2, 4> left_top_vertices;
-	left_top_vertices[0].Set(-124, 139);
-	left_top_vertices[1].Set(-122, 139);
-	left_top_vertices[2].Set(-122, 87);
-	left_top_vertices[3].Set(-124, 87);
+	left_top_vertices[0].Set(-484, 664);
+	left_top_vertices[1].Set(-482, 664);
+	left_top_vertices[2].Set(-482, 372);
+	left_top_vertices[3].Set(-484, 372);
 	b2PolygonShape left_top_box;
 	left_top_box.Set(left_top_vertices.data(), left_top_vertices.max_size());
 	b2FixtureDef left_top_def;
@@ -887,10 +887,10 @@ boundary::boundary(b2World& world)
 	left_top_sensor = body_->CreateFixture(&left_top_def);
 
 	std::array<b2Vec2, 4> left_bottom_vertices;
-	left_bottom_vertices[0].Set(-124, 63);
-	left_bottom_vertices[1].Set(-122, 63);
-	left_bottom_vertices[2].Set(-122, 11);
-	left_bottom_vertices[3].Set(-124, 11);
+	left_bottom_vertices[0].Set(-484, 308);
+	left_bottom_vertices[1].Set(-482, 308);
+	left_bottom_vertices[2].Set(-482, 16);
+	left_bottom_vertices[3].Set(-484, 16);
 	b2PolygonShape left_bottom_box;
 	left_bottom_box.Set(left_bottom_vertices.data(), left_bottom_vertices.max_size());
 	b2FixtureDef left_bottom_def;
@@ -902,10 +902,10 @@ boundary::boundary(b2World& world)
 	left_bottom_sensor = body_->CreateFixture(&left_bottom_def);
 
 	std::array<b2Vec2, 4> right_top_vertices;
-	right_top_vertices[0].Set(122, 139);
-	right_top_vertices[1].Set(124, 139);
-	right_top_vertices[2].Set(124, 87);
-	right_top_vertices[3].Set(122, 87);
+	right_top_vertices[0].Set(482, 664);
+	right_top_vertices[1].Set(484, 664);
+	right_top_vertices[2].Set(484, 372);
+	right_top_vertices[3].Set(482, 372);
 	b2PolygonShape right_top_box;
 	right_top_box.Set(right_top_vertices.data(), right_top_vertices.max_size());
 	b2FixtureDef right_top_def;
@@ -917,10 +917,10 @@ boundary::boundary(b2World& world)
 	right_top_sensor = body_->CreateFixture(&right_top_def);
 
 	std::array<b2Vec2, 4> right_bottom_vertices;
-	right_bottom_vertices[0].Set(122, 63);
-	right_bottom_vertices[1].Set(124, 63);
-	right_bottom_vertices[2].Set(124, 11);
-	right_bottom_vertices[3].Set(122, 11);
+	right_bottom_vertices[0].Set(482, 308);
+	right_bottom_vertices[1].Set(484, 308);
+	right_bottom_vertices[2].Set(484, 16);
+	right_bottom_vertices[3].Set(482, 16);
 	b2PolygonShape right_bottom_box;
 	right_bottom_box.Set(right_bottom_vertices.data(), right_bottom_vertices.max_size());
 	b2FixtureDef right_bottom_def;
@@ -932,10 +932,10 @@ boundary::boundary(b2World& world)
 	right_bottom_sensor = body_->CreateFixture(&right_bottom_def);
 
 	std::array<b2Vec2, 4> bottom_vertices;
-	bottom_vertices[0].Set(-122, 13);
-	bottom_vertices[1].Set(122, 13);
-	bottom_vertices[2].Set(122, 11);
-	bottom_vertices[3].Set(-122, 11);
+	bottom_vertices[0].Set(-482, 18);
+	bottom_vertices[1].Set(482, 18);
+	bottom_vertices[2].Set(482, 16);
+	bottom_vertices[3].Set(-482, 16);
 	b2PolygonShape bottom_box;
 	bottom_box.Set(bottom_vertices.data(), bottom_vertices.max_size());
 	b2FixtureDef bottom_def;
@@ -962,11 +962,11 @@ struct penalty_box
 penalty_box::penalty_box(b2World& world, entity::type type)
 	:
 		orientation((type == entity::left_penalty_box) ? -1 : 1),
-		spot(world, type, entity::spot, b2Vec2(95 * orientation, 75)),
-		top_left(world, type, entity::top_left, b2Vec2(120 * orientation, 115)),
-		top_right(world, type, entity::top_right, b2Vec2(80 * orientation, 115)),
-		bottom_left(world, type, entity::bottom_left, b2Vec2(120 * orientation, 35)),
-		bottom_right(world, type, entity::bottom_right, b2Vec2(80 * orientation, 35))
+		spot(world, type, entity::spot, b2Vec2(384 * orientation, 340)),
+		top_left(world, type, entity::top_left, b2Vec2(480 * orientation, 500)),
+		top_right(world, type, entity::top_right, b2Vec2(352 * orientation, 500)),
+		bottom_left(world, type, entity::bottom_left, b2Vec2(480 * orientation, 180)),
+		bottom_right(world, type, entity::bottom_right, b2Vec2(352 * orientation, 180))
 {}
 
 struct field
@@ -983,9 +983,9 @@ struct field
 
 field::field(b2World& world)
 	:
-		left_goal(world, entity::left_goal, b2Vec2(-120, 75)),
-		right_goal(world, entity::right_goal, b2Vec2(120, 75)),
-		center(world, b2Vec2(0, 75)),
+		left_goal(world, entity::left_goal, b2Vec2(-480, 340)),
+		right_goal(world, entity::right_goal, b2Vec2(480, 340)),
+		center(world, b2Vec2(0, 340)),
 		boundary(world),
 		left_penalty(world, entity::left_penalty_box),
 		right_penalty(world, entity::right_penalty_box)
@@ -1067,7 +1067,7 @@ private:
 football::football()
 	:
 		Test(),
-		ball_(*m_world, b2Vec2(0, 75)),
+		ball_(*m_world, b2Vec2(0, 340)),
 		player_a01_(*m_world, entity::alpha_1, b2Vec2(-10, 15), 90U),
 		player_a02_(*m_world, entity::alpha_2, b2Vec2(-20, 15), 90U),
 		player_a03_(*m_world, entity::alpha_3, b2Vec2(-30, 15), 90U),
