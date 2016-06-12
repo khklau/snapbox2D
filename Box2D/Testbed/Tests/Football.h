@@ -609,10 +609,12 @@ void hip::turn(std::int16_t velocity)
 class player
 {
 public:
-	static const std::uint8_t MAX_ENERGY = 100U;
+	static const std::uint8_t MAX_ENERGY = 200U;
+	static const std::uint8_t FORWARD_RUN_COST = 100U;
+	static const std::uint8_t BACKWARD_RUN_COST = 200U;
 	player(b2World& world, entity::id id, const b2Vec2& position, const std::uint16_t degree);
 	void step();
-	inline void run(std::int16_t velocity) { neck_.run(velocity); hip_.run(velocity); }
+	void run(std::int16_t velocity);
 	inline void turn_head(std::int16_t velocity) { neck_.turn(velocity); }
 	inline void turn_torso(std::int16_t velocity) { hip_.turn(velocity); }
 	inline void kick(std::int16_t velocity) { hip_.kick(velocity); }
@@ -649,6 +651,22 @@ void player::step()
 	if (energy_ < MAX_ENERGY)
 	{
 		energy_ += 1;
+	}
+}
+
+void player::run(std::int16_t velocity)
+{
+	if ((velocity > 0) && (energy_ >= FORWARD_RUN_COST))
+	{
+		neck_.run(velocity);
+		hip_.run(velocity);
+		energy_ -= FORWARD_RUN_COST;
+	}
+	else if ((velocity < 0) && (energy_ >= BACKWARD_RUN_COST))
+	{
+		neck_.run(velocity);
+		hip_.run(velocity);
+		energy_ -= BACKWARD_RUN_COST;
 	}
 }
 
@@ -1068,28 +1086,7 @@ private:
 		football& football_;
 	};
 	ball ball_;
-	player player_a01_;
-	player player_a02_;
-	player player_a03_;
-	player player_a04_;
-	player player_a05_;
-	player player_a06_;
-	player player_a07_;
-	player player_a08_;
-	player player_a09_;
-	player player_a10_;
-	player player_a11_;
-	player player_b01_;
-	player player_b02_;
-	player player_b03_;
-	player player_b04_;
-	player player_b05_;
-	player player_b06_;
-	player player_b07_;
-	player player_b08_;
-	player player_b09_;
-	player player_b10_;
-	player player_b11_;
+	std::array<player, 22> roster_;
 	field field_;
 	contact_listener listener_;
 	std::uint8_t score_;
@@ -1100,28 +1097,31 @@ football::football()
 	:
 		Test(),
 		ball_(*m_world, b2Vec2(0, 340)),
-		player_a01_(*m_world, entity::alpha_1, b2Vec2(-10, 15), 90U),
-		player_a02_(*m_world, entity::alpha_2, b2Vec2(-20, 15), 90U),
-		player_a03_(*m_world, entity::alpha_3, b2Vec2(-30, 15), 90U),
-		player_a04_(*m_world, entity::alpha_4, b2Vec2(-40, 15), 90U),
-		player_a05_(*m_world, entity::alpha_5, b2Vec2(-50, 15), 90U),
-		player_a06_(*m_world, entity::alpha_6, b2Vec2(-60, 15), 90U),
-		player_a07_(*m_world, entity::alpha_7, b2Vec2(-70, 15), 90U),
-		player_a08_(*m_world, entity::alpha_8, b2Vec2(-80, 15), 90U),
-		player_a09_(*m_world, entity::alpha_9, b2Vec2(-90, 15), 90U),
-		player_a10_(*m_world, entity::alpha_10, b2Vec2(-100, 15), 90U),
-		player_a11_(*m_world, entity::alpha_11, b2Vec2(-110, 15), 90U),
-		player_b01_(*m_world, entity::beta_1, b2Vec2(10, 15), 90U),
-		player_b02_(*m_world, entity::beta_2, b2Vec2(20, 15), 90U),
-		player_b03_(*m_world, entity::beta_3, b2Vec2(30, 15), 90U),
-		player_b04_(*m_world, entity::beta_4, b2Vec2(40, 15), 90U),
-		player_b05_(*m_world, entity::beta_5, b2Vec2(50, 15), 90U),
-		player_b06_(*m_world, entity::beta_6, b2Vec2(60, 15), 90U),
-		player_b07_(*m_world, entity::beta_7, b2Vec2(70, 15), 90U),
-		player_b08_(*m_world, entity::beta_8, b2Vec2(80, 15), 90U),
-		player_b09_(*m_world, entity::beta_9, b2Vec2(90, 15), 90U),
-		player_b10_(*m_world, entity::beta_10, b2Vec2(100, 15), 90U),
-		player_b11_(*m_world, entity::beta_11, b2Vec2(110, 15), 90U),
+		roster_
+		{{
+			{ *m_world, entity::alpha_1, b2Vec2(-10, 15), 90U },
+			{ *m_world, entity::alpha_2, b2Vec2(-20, 15), 90U },
+			{ *m_world, entity::alpha_3, b2Vec2(-30, 15), 90U },
+			{ *m_world, entity::alpha_4, b2Vec2(-40, 15), 90U },
+			{ *m_world, entity::alpha_5, b2Vec2(-50, 15), 90U },
+			{ *m_world, entity::alpha_6, b2Vec2(-60, 15), 90U },
+			{ *m_world, entity::alpha_7, b2Vec2(-70, 15), 90U },
+			{ *m_world, entity::alpha_8, b2Vec2(-80, 15), 90U },
+			{ *m_world, entity::alpha_9, b2Vec2(-90, 15), 90U },
+			{ *m_world, entity::alpha_10, b2Vec2(-100, 15), 90U },
+			{ *m_world, entity::alpha_11, b2Vec2(-110, 15), 90U },
+			{ *m_world, entity::beta_1, b2Vec2(10, 15), 90U },
+			{ *m_world, entity::beta_2, b2Vec2(20, 15), 90U },
+			{ *m_world, entity::beta_3, b2Vec2(30, 15), 90U },
+			{ *m_world, entity::beta_4, b2Vec2(40, 15), 90U },
+			{ *m_world, entity::beta_5, b2Vec2(50, 15), 90U },
+			{ *m_world, entity::beta_6, b2Vec2(60, 15), 90U },
+			{ *m_world, entity::beta_7, b2Vec2(70, 15), 90U },
+			{ *m_world, entity::beta_8, b2Vec2(80, 15), 90U },
+			{ *m_world, entity::beta_9, b2Vec2(90, 15), 90U },
+			{ *m_world, entity::beta_10, b2Vec2(100, 15), 90U },
+			{ *m_world, entity::beta_11, b2Vec2(110, 15), 90U }
+		}},
 		field_(*m_world),
 		listener_(*this),
 		score_(0),
@@ -1134,21 +1134,25 @@ football::football()
 void football::Step(Settings* settings)
 {
 	Test::Step(settings);
+	for (player& player : roster_)
+	{
+		player.step();
+	}
 	g_debugDraw.DrawString(5, m_textLine, "Score: %d", score_);
 	m_textLine += DRAW_STRING_NEW_LINE;
-	g_debugDraw.DrawString(5, m_textLine, "Player energy: %d", player_a01_.get_energy());
+	g_debugDraw.DrawString(5, m_textLine, "Player energy: %d", roster_[0].get_energy());
 	m_textLine += DRAW_STRING_NEW_LINE;
-	g_debugDraw.DrawString(5, m_textLine, "Player head angle: %3.2f", player_a01_.get_head_angle() * rad2deg);
+	g_debugDraw.DrawString(5, m_textLine, "Player head angle: %3.2f", roster_[0].get_head_angle() * rad2deg);
 	m_textLine += DRAW_STRING_NEW_LINE;
-	g_debugDraw.DrawString(5, m_textLine, "Player head velocity: %3.2f", player_a01_.get_head_velocity());
+	g_debugDraw.DrawString(5, m_textLine, "Player head velocity: %3.2f", roster_[0].get_head_velocity());
 	m_textLine += DRAW_STRING_NEW_LINE;
-	g_debugDraw.DrawString(5, m_textLine, "Player torso angle: %3.2f", player_a01_.get_torso_angle() * rad2deg);
+	g_debugDraw.DrawString(5, m_textLine, "Player torso angle: %3.2f", roster_[0].get_torso_angle() * rad2deg);
 	m_textLine += DRAW_STRING_NEW_LINE;
-	g_debugDraw.DrawString(5, m_textLine, "Player torso angular velocity: %3.2f", player_a01_.get_torso_angular_velocity());
+	g_debugDraw.DrawString(5, m_textLine, "Player torso angular velocity: %3.2f", roster_[0].get_torso_angular_velocity());
 	m_textLine += DRAW_STRING_NEW_LINE;
-	g_debugDraw.DrawString(5, m_textLine, "Player foot translation: %3.2f", player_a01_.get_foot_translation());
+	g_debugDraw.DrawString(5, m_textLine, "Player foot translation: %3.2f", roster_[0].get_foot_translation());
 	m_textLine += DRAW_STRING_NEW_LINE;
-	g_debugDraw.DrawString(5, m_textLine, "Player foot speed: %3.2f", player_a01_.get_foot_speed());
+	g_debugDraw.DrawString(5, m_textLine, "Player foot speed: %3.2f", roster_[0].get_foot_speed());
 	m_textLine += DRAW_STRING_NEW_LINE;
 	g_debugDraw.DrawString(5, m_textLine, "Sensed entity id: %d", event_.id);
 	m_textLine += DRAW_STRING_NEW_LINE;
@@ -1167,28 +1171,28 @@ void football::Keyboard(int key)
 	switch (key)
 	{
 		case GLFW_KEY_Q:
-			player_a01_.turn_head(100);
+			roster_[0].turn_head(100);
 			break;
 		case GLFW_KEY_E:
-			player_a01_.turn_head(-100);
+			roster_[0].turn_head(-100);
 			break;
 		case GLFW_KEY_W:
-			player_a01_.run(8000);
+			roster_[0].run(8000);
 			break;
 		case GLFW_KEY_S:
-			player_a01_.run(-8000);
+			roster_[0].run(-8000);
 			break;
 		case GLFW_KEY_A:
-			player_a01_.turn_torso(200);
+			roster_[0].turn_torso(200);
 			break;
 		case GLFW_KEY_D:
-			player_a01_.turn_torso(-200);
+			roster_[0].turn_torso(-200);
 			break;
 		case GLFW_KEY_3:
-			player_a01_.kick(8000);
+			roster_[0].kick(8000);
 			break;
 		case GLFW_KEY_1:
-			player_a01_.kick(-8000);
+			roster_[0].kick(-8000);
 			break;
 	}
 }
