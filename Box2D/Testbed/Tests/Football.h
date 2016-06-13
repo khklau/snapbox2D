@@ -588,10 +588,9 @@ void hip::kick(std::int16_t velocity)
 
 void hip::run(std::int16_t velocity)
 {
-	std::int16_t final_velocity = (velocity < 0) ? velocity / 25 : velocity;
 	b2Vec2 target(0, 0);
-	target.x = final_velocity / 1000.0 * cosf(get_torso_angle());
-	target.y = final_velocity / 1000.0 * sinf(get_torso_angle());
+	target.x = velocity / 1000.0 * cosf(get_torso_angle());
+	target.y = velocity / 1000.0 * sinf(get_torso_angle());
 	get_torso_body().ApplyLinearImpulse(target, get_torso_body().GetWorldCenter(), true);
 	if (velocity < 0)
 	{
@@ -616,7 +615,7 @@ public:
 	static const std::uint8_t MAX_TORSO_TURN_COST = 40U;
 	static const std::uint8_t MAX_KICK_COST = 100U;
 	static const std::int16_t MAX_FORWARD_VELOCITY = 16000U;
-	static const std::int16_t MAX_BACKWARD_VELOCITY = -4000U;
+	static const std::int16_t MAX_BACKWARD_VELOCITY = -8000U;
 	static const std::int16_t MAX_HEAD_TURN_VELOCITY = 100U;
 	static const std::int16_t MAX_TORSO_TURN_VELOCITY = 200U;
 	static const std::int16_t MAX_KICK_VELOCITY = 32000U;
