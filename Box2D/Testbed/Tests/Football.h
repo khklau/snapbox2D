@@ -612,12 +612,15 @@ public:
 	static const std::uint8_t MAX_ENERGY = 200U;
 	static const std::uint8_t FORWARD_RUN_COST = 100U;
 	static const std::uint8_t BACKWARD_RUN_COST = 200U;
+	static const std::uint8_t TURN_HEAD_COST = 10U;
+	static const std::uint8_t TURN_TORSO_COST = 20U;
+	static const std::uint8_t KICK_COST = 100U;
 	player(b2World& world, entity::id id, const b2Vec2& position, const std::uint16_t degree);
 	void step();
 	void run(std::int16_t velocity);
-	inline void turn_head(std::int16_t velocity) { neck_.turn(velocity); }
-	inline void turn_torso(std::int16_t velocity) { hip_.turn(velocity); }
-	inline void kick(std::int16_t velocity) { hip_.kick(velocity); }
+	void turn_head(std::int16_t velocity);
+	void turn_torso(std::int16_t velocity);
+	void kick(std::int16_t velocity);
 	inline float get_head_angle() const { return neck_.get_head_angle(); }
 	inline float get_head_velocity() const { return neck_.get_head_velocity(); }
 	inline float get_torso_angle() const { return hip_.get_torso_angle(); }
@@ -667,6 +670,33 @@ void player::run(std::int16_t velocity)
 		neck_.run(velocity);
 		hip_.run(velocity);
 		energy_ -= BACKWARD_RUN_COST;
+	}
+}
+
+void player::turn_torso(std::int16_t velocity)
+{
+	if (energy_ >= TURN_TORSO_COST)
+	{
+		hip_.turn(velocity);
+		energy_ -= TURN_TORSO_COST;
+	}
+}
+
+void player::turn_head(std::int16_t velocity)
+{
+	if (energy_ >= TURN_HEAD_COST)
+	{
+		neck_.turn(velocity);
+		energy_ -= TURN_HEAD_COST;
+	}
+}
+
+void player::kick(std::int16_t velocity)
+{
+	if (energy_ >= KICK_COST)
+	{
+		hip_.kick(velocity);
+		energy_ -= KICK_COST;
 	}
 }
 
