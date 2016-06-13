@@ -610,11 +610,16 @@ class player
 {
 public:
 	static const std::uint8_t MAX_ENERGY = 200U;
-	static const std::uint8_t FORWARD_RUN_COST = 100U;
-	static const std::uint8_t BACKWARD_RUN_COST = 200U;
-	static const std::uint8_t TURN_HEAD_COST = 10U;
-	static const std::uint8_t TURN_TORSO_COST = 20U;
-	static const std::uint8_t KICK_COST = 100U;
+	static const std::uint8_t MAX_FORWARD_COST = 100U;
+	static const std::uint8_t MAX_BACKWARD_COST = 200U;
+	static const std::uint8_t MAX_HEAD_TURN_COST = 20U;
+	static const std::uint8_t MAX_TORSO_TURN_COST = 40U;
+	static const std::uint8_t MAX_KICK_COST = 100U;
+	static const std::int16_t MAX_FORWARD_VELOCITY = 16000U;
+	static const std::int16_t MAX_BACKWARD_VELOCITY = -4000U;
+	static const std::int16_t MAX_HEAD_TURN_VELOCITY = 100U;
+	static const std::int16_t MAX_TORSO_TURN_VELOCITY = 200U;
+	static const std::int16_t MAX_KICK_VELOCITY = 32000U;
 	player(b2World& world, entity::id id, const b2Vec2& position, const std::uint16_t degree);
 	void step();
 	void run(std::int16_t velocity);
@@ -659,44 +664,47 @@ void player::step()
 
 void player::run(std::int16_t velocity)
 {
-	if ((velocity > 0) && (energy_ >= FORWARD_RUN_COST))
+	std::uint16_t cost = (velocity > 0)
+			? velocity / MAX_FORWARD_VELOCITY * MAX_FORWARD_COST
+			: velocity / MAX_BACKWARD_VELOCITY * MAX_BACKWARD_COST;
+	if (energy_ >= cost)
 	{
 		neck_.run(velocity);
 		hip_.run(velocity);
-		energy_ -= FORWARD_RUN_COST;
-	}
-	else if ((velocity < 0) && (energy_ >= BACKWARD_RUN_COST))
-	{
-		neck_.run(velocity);
-		hip_.run(velocity);
-		energy_ -= BACKWARD_RUN_COST;
+		energy_ -= cost;
 	}
 }
 
 void player::turn_torso(std::int16_t velocity)
 {
-	if (energy_ >= TURN_TORSO_COST)
+	std::uint16_t cost = ((velocity > 0) ? velocity : velocity * -1)
+			/ MAX_TORSO_TURN_VELOCITY * MAX_TORSO_TURN_COST;
+	if (energy_ >= cost)
 	{
 		hip_.turn(velocity);
-		energy_ -= TURN_TORSO_COST;
+		energy_ -= cost;
 	}
 }
 
 void player::turn_head(std::int16_t velocity)
 {
-	if (energy_ >= TURN_HEAD_COST)
+	std::uint16_t cost = ((velocity > 0) ? velocity : velocity * -1)
+			/ MAX_HEAD_TURN_VELOCITY * MAX_HEAD_TURN_COST;
+	if (energy_ >= cost)
 	{
 		neck_.turn(velocity);
-		energy_ -= TURN_HEAD_COST;
+		energy_ -= cost;
 	}
 }
 
 void player::kick(std::int16_t velocity)
 {
-	if (energy_ >= KICK_COST)
+	std::uint16_t cost = ((velocity > 0) ? velocity : velocity * -1)
+			/ MAX_KICK_VELOCITY * MAX_KICK_COST;
+	if (energy_ >= cost)
 	{
 		hip_.kick(velocity);
-		energy_ -= KICK_COST;
+		energy_ -= cost;
 	}
 }
 
@@ -1201,28 +1209,28 @@ void football::Keyboard(int key)
 	switch (key)
 	{
 		case GLFW_KEY_Q:
-			roster_[0].turn_head(100);
+			roster_[0].turn_head(player::MAX_HEAD_TURN_VELOCITY);
 			break;
 		case GLFW_KEY_E:
-			roster_[0].turn_head(-100);
+			roster_[0].turn_head(player::MAX_HEAD_TURN_VELOCITY * -1);
 			break;
 		case GLFW_KEY_W:
-			roster_[0].run(8000);
+			roster_[0].run(player::MAX_FORWARD_VELOCITY);
 			break;
 		case GLFW_KEY_S:
-			roster_[0].run(-8000);
+			roster_[0].run(player::MAX_BACKWARD_VELOCITY);
 			break;
 		case GLFW_KEY_A:
-			roster_[0].turn_torso(200);
+			roster_[0].turn_torso(player::MAX_TORSO_TURN_VELOCITY);
 			break;
 		case GLFW_KEY_D:
-			roster_[0].turn_torso(-200);
+			roster_[0].turn_torso(player::MAX_TORSO_TURN_VELOCITY * -1);
 			break;
 		case GLFW_KEY_3:
-			roster_[0].kick(8000);
+			roster_[0].kick(player::MAX_KICK_VELOCITY);
 			break;
 		case GLFW_KEY_1:
-			roster_[0].kick(-8000);
+			roster_[0].kick(player::MAX_KICK_VELOCITY * -1);
 			break;
 	}
 }
