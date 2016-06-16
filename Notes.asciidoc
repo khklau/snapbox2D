@@ -1,0 +1,35 @@
+= Data Structures
+
+== BlockHeader
+
+* handle to a heap block allocation requested by Box2D
+
+* header and block are allocated together contiguously
+
+* BlockHeaders are chained together in a double linked list
+
+== StoredBlock
+
+* handle to saved heap blocks
+
+* contains fields for block size, data size and some helper fields for delta compression
+
+* contains a pointer to its BlockHeader
+
+* contains a pointer to the next StorageBlock (unnecessary IMHO)
+
+== Sim
+
+* free_list - an unordered_map of allocation sizes to linked list of BlockHeaders; this represents the free list of blocks
+
+* last_block - pointer to a double linked list of BlockHeaders in use
+
+= Operations
+
+== Sim::b2Alloc
+
+# if the free list has an available block of the requested size use it otherwise allocate a new header and block
+
+# zeroes the block
+
+# adds the BlockHeader to the last_block linked list 
