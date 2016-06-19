@@ -10,19 +10,29 @@
 
 == StoredBlock
 
-* handle to saved heap blocks
+* handle to saved blocks copies or saved block diffs
 
 * contains fields for block size, data size and some helper fields for delta compression
 
 * contains a pointer to its BlockHeader
 
-* contains a pointer to the next StorageBlock (unnecessary IMHO)
+* StoredBlocks are chained together in a single linked list
 
 == Sim
 
 * free_list - an unordered_map of allocation sizes to linked list of BlockHeaders; this represents the free list of blocks
 
-* last_block - pointer to a double linked list of BlockHeaders in use
+* last_block - pointer to a double linked list of BlockHeaders taken
+
+* stateful allocator
+
+== SimMem
+
+* handle to absolute or relative StoredBlocks
+
+* first_block - pointer to a double linked list of StoredBlock
+
+* rel - a pointer to another SimMem which is used if the StoredBlock is a diff
 
 = Operations
 
@@ -32,4 +42,31 @@
 
 # zeroes the block
 
-# adds the BlockHeader to the last_block linked list 
+# adds the BlockHeader to the last_block linked list
+
+== Sim::b2free
+
+# if the given block is last_block, update last_block to point to the previous block
+
+# remove the block from the taken double linked list
+
+# insert the block into free_list
+
+== Sim::save
+
+# If a rel_mem argument was given
+
+## construct an unordered_map of BlockHeader pointers to const StoredBlock pointers by following the StoredBlock list
+   in rel_mem (does not follow through rel_mem.rel though!)
+
+## set rel_mem as the rel field for the into SimMem argument
+
+# Frees any existing StoredBlock list in the into SimMem argument
+
+# Iterates through the Sim's BlockHeader list and
+
+## checks whether that BlockHeader exists in the unordered_map constructed earlier
+
+## constructs a new compressed relative StoredBlock if the BlockHeader was found otherwise an absolute new StoredBlock (memcpy of BlockHeader's block)
+
+## adds the new StoredBlock to the into SimMem argument's list
