@@ -46,6 +46,8 @@
 
 == Sim::b2free
 
+# Finds the BlockHeader from the block data pointer
+
 # if the given block is last_block, update last_block to point to the previous block
 
 # remove the block from the taken double linked list
@@ -63,10 +65,29 @@
 
 # Frees any existing StoredBlock list in the into SimMem argument
 
-# Iterates through the Sim's BlockHeader list and
+# Iterates through this Sim's BlockHeader list and
 
 ## checks whether that BlockHeader exists in the unordered_map constructed earlier
 
 ## constructs a new compressed relative StoredBlock if the BlockHeader was found otherwise an absolute new StoredBlock (memcpy of BlockHeader's block)
 
 ## adds the new StoredBlock to the into SimMem argument's list
+
+== Sim::load
+
+# If the from SimMem argument has rel set, construct an unordered_map of BlockHeader pointers to const StoredBlock pointers 
+  by following the StoredBlock list in from.rel
+
+# Retrns all of the blocks in this Sim to the free list
+
+# Iterates through the SimMem's StoredBlock list and
+
+## Finds the StoredBlock's corresponding BlockHeader
+
+## The BlockHeader is moved from SimMem's BlockHeader list to Sim's BlockHeader list
+
+## Checks whether the BlockHeader exists in the unordered_map and
+
+### If found merges the relative StoredBlock's data with the BlockHeader's data 
+
+### Else copies the absolute StoredBlock's data to the BlockHeader's data
