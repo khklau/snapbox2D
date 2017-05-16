@@ -1,0 +1,11 @@
+{
+    "product" : "snapbox2D",
+    "version" : "khklau_v2.3.1.x",
+    "dependencies" :
+    [
+	{
+	    "product" : "turbo",
+	    "version" : "master"
+	}
+    ]
+}
