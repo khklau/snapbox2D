@@ -1,3 +1,53 @@
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Vim
+*.swp
+
+# Waf
+/.lock-waf*
+/.waf*
+/waf
+/build.status
+/build
+/bin
+/lib
+/include
+
+# GNU Global
+GPATH
+GRTAGS
+GSYMS
+GTAGS
+stl
+
+# Box2D
 /Box2D/Build/vs2015/.vs
 /Box2D/Build/vs2015/Box2D.VC.db
 /Box2D/Build/vs2015/Box2D.VC.VC.opendb
