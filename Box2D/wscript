@@ -1,0 +1,62 @@
+import hashlib
+import os
+import shutil
+import subprocess
+import tarfile
+import urllib
+import zipfile
+from waflib import Logs
+from waflib.extras.preparation import PreparationContext
+from waflib.extras.build_status import BuildStatus
+from waflib.extras.filesystem_utils import removeSubdir
+from waflib.extras.mirror import MirroredTarFile, MirroredZipFile
+
+__buildDir = 'Build'
+
+def options(optCtx):
+    pass
+
+def prepare(prepCtx):
+    pass
+
+def configure(confCtx):
+    status = BuildStatus.init(confCtx.path.abspath())
+    if status.isSuccess():
+	confCtx.msg('Configuration already complete', 'skipping')
+	return
+    if os.name == 'posix':
+	returnCode = subprocess.call([
+		'premake4',
+		'gmake'])
+	if returnCode != 0:
+	    confCtx.fatal('Box2D configure failed: %d' % returnCode)
+    elif os.name == 'nt':
+	# Nothing to do, just use the provided VS solution
+	return
+    else:
+	confCtx.fatal('Unsupported OS %s' % os.name)
+
+def build(buildCtx):
+    status = BuildStatus.load(buildCtx.path.abspath())
+    if status.isSuccess():
+	Logs.pprint('NORMAL', 'Build already complete                   :', sep='')
+	Logs.pprint('GREEN', 'skipping')
+	return
+    if os.name == 'posix':
+	buildDir = os.path.join(buildCtx.path.abspath(), __buildDir, 'Build', 'gmake')
+	os.chdir(buildDir)
+	returnCode = subprocess.call([
+		'make',
+		'config="release"',
+		'install'])
+    elif os.name == 'nt':
+	buildDir = os.path.join(buildCtx.path.abspath(), __buildDir, 'Build', 'vs2015')
+	os.chdir(buildDir)
+	returnCode = subprocess.call([
+		'devenv.com',
+		os.path.join(buildDir, 'Box2D.sln')])
+    else:
+	confCtx.fatal('Unsupported OS %s' % os.name)
+    if returnCode != 0:
+	buildCtx.fatal('Box2D build failed: %d' % returnCode)
+    status.setSuccess()
