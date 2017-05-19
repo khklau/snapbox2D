@@ -2,3 +2,6 @@
 	path = env
 	url = https://github.com/khklau/envconf
 	branch = master
+[submodule "tool/waf"]
+	path = tool/waf
+	url = https://github.com/khklau/waf_khklau
