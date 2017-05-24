@@ -1,40 +1,24 @@
-import hashlib
-import os
-import shutil
-import subprocess
-import tarfile
-import urllib
-import zipfile
 from waflib import Logs
 from waflib.extras.preparation import PreparationContext
 from waflib.extras.build_status import BuildStatus
-from waflib.extras.filesystem_utils import removeSubdir
-from waflib.extras.mirror import MirroredTarFile, MirroredZipFile
 
 def options(optCtx):
-    optCtx.load('dep_resolver')
-    optCtx.recurse('Box2D')
     optCtx.recurse('env')
-    optCtx.recurse('src')
-    optCtx.recurse('test')
+    optCtx.recurse('Box2D')
 
 def prepare(prepCtx):
-    prepCtx.options.dep_base_dir = prepCtx.srcnode.find_dir('..').abspath()
-    prepCtx.load('dep_resolver')
-    prepCtx.recurse('Box2D')
     prepCtx.recurse('env')
-    prepCtx.recurse('src')
-    prepCtx.recurse('test')
+    prepCtx.recurse('Box2D')
 
 def configure(confCtx):
-    confCtx.load('dep_resolver')
-    confCtx.recurse('Box2D')
     confCtx.recurse('env')
-    confCtx.recurse('src')
-    confCtx.recurse('test')
+    confCtx.recurse('Box2D')
 
 def build(buildCtx):
+    status = BuildStatus.init(buildCtx.path.abspath())
+    if status.isSuccess() and not(buildCtx.is_install):
+	Logs.pprint('NORMAL', 'Build already complete                   :', sep='')
+	Logs.pprint('GREEN', 'skipping')
+	return
     buildCtx.recurse('Box2D')
-    buildCtx.recurse('env')
-    buildCtx.recurse('src')
-    buildCtx.recurse('test')
+    status.setSuccess()
