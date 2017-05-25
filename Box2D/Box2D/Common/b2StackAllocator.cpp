@@ -16,6 +16,7 @@
 * 3. This notice may not be removed or altered from any source distribution.
 */
 
+#include <cstdlib>
 #include <Box2D/Common/b2StackAllocator.h>
 #include <Box2D/Common/b2Math.h>
 
@@ -41,7 +42,10 @@ void* b2StackAllocator::Allocate(int32 size)
 	entry->size = size;
 	if (m_index + size > b2_stackSize)
 	{
-		entry->data = (char*)b2Alloc(size);
+		// snapBox2D only supports snapshots of the world state between ticks
+		// hence we *don't* want to use the snapBox2D allocator for
+		// b2StackAllocator since it is designed for intra-tick allocations
+		entry->data = (char*)malloc(size);
 		entry->usedMalloc = true;
 	}
 	else
@@ -65,7 +69,9 @@ void b2StackAllocator::Free(void* p)
 	b2Assert(p == entry->data);
 	if (entry->usedMalloc)
 	{
-		b2Free(p);
+		// note the use of libc free instead of the snapBox2D allocator
+		// for reasons documented in the Allocate member function
+		free(p);
 	}
 	else
 	{
