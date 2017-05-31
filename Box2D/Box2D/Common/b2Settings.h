@@ -128,7 +128,7 @@ typedef double float64;
 // Memory Allocation
 
 /// Implement this function to use your own memory allocator.
-void* b2Alloc(int32 size);
+void* b2Alloc(size_t size);
 
 /// If you implement b2Alloc, you should also implement this function.
 void b2Free(void* mem);

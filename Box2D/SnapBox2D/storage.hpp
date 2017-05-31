@@ -1,0 +1,4 @@
+#ifndef SNAPBOX2D_STORAGE_HPP
+#define SNAPBOX2D_STORAGE_HPP
+
+#endif

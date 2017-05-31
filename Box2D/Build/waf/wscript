@@ -47,7 +47,8 @@ publicHeaders = [
     ['..', '..', 'Box2D', 'Dynamics', 'Joints', 'b2RevoluteJoint.h'],
     ['..', '..', 'Box2D', 'Dynamics', 'Joints', 'b2RopeJoint.h'],
     ['..', '..', 'Box2D', 'Dynamics', 'Joints', 'b2WeldJoint.h'],
-    ['..', '..', 'Box2D', 'Dynamics', 'Joints', 'b2WheelJoint.h']]
+    ['..', '..', 'Box2D', 'Dynamics', 'Joints', 'b2WheelJoint.h'],
+    ['..', '..', 'SnapBox2D', 'storage.hpp']]
 
 sourceFiles = [
     ['..', '..', 'Box2D', 'Collision', 'b2BroadPhase.cpp'],
@@ -94,10 +95,11 @@ sourceFiles = [
     ['..', '..', 'Box2D', 'Dynamics', 'Joints', 'b2RevoluteJoint.cpp'],
     ['..', '..', 'Box2D', 'Dynamics', 'Joints', 'b2RopeJoint.cpp'],
     ['..', '..', 'Box2D', 'Dynamics', 'Joints', 'b2WeldJoint.cpp'],
-    ['..', '..', 'Box2D', 'Dynamics', 'Joints', 'b2WheelJoint.cpp']]
+    ['..', '..', 'Box2D', 'Dynamics', 'Joints', 'b2WheelJoint.cpp'],
+    ['..', '..', 'SnapBox2D', 'storage.cxx']]
 
 def configure(confCtx):
-    confCtx.env.component = Component.fromContext(confCtx, 'Box2D', confCtx.env.product)
+    confCtx.env.component = Component.fromContext(confCtx, 'SnapBox2D', confCtx.env.product)
     confCtx.env.product.addComponent(confCtx.env.component)
 
 def build(buildCtx):
@@ -109,12 +111,12 @@ def build(buildCtx):
 		rule='cp ${SRC} ${TGT}',
 		source=buildCtx.path.find_node(os.path.join(header)),
 		target=os.path.join(buildCtx.env.solution.build_tree.includePathFromBuild(buildCtx), os.sep.join(header[2:(len(header))])),
-		install_path=os.path.join(buildCtx.env.solution.install_tree.include, os.sep.join(header[2:(len(header))])))
+		install_path=os.path.dirname(os.path.join(buildCtx.env.solution.install_tree.include, os.sep.join(header[2:(len(header))]))))
 	publishTaskList.append(publishTask)
     buildCtx.shlib(
 	    name='shlib_turbo_memory',
 	    source=[buildCtx.path.find_node(os.path.join(source)) for source in sourceFiles],
-	    target=os.path.join(buildCtx.env.component.build_tree.libPathFromBuild(buildCtx), 'Box2D'),
+	    target=os.path.join(buildCtx.env.component.build_tree.libPathFromBuild(buildCtx), 'SnapBox2D'),
 	    includes=buildCtx.env.component.include_path_list,
 	    defines=['SHLIB_BUILD'],
 	    cxxflags=buildCtx.env.CXXFLAGS + ['-MMD', '-MP', '-Wno-strict-aliasing'],
@@ -127,7 +129,7 @@ def build(buildCtx):
     buildCtx.stlib(
 	    name='stlib_turbo_memory',
 	    source=[buildCtx.path.find_node(source) for source in sourceFiles],
-	    target=os.path.join(buildCtx.env.component.build_tree.libPathFromBuild(buildCtx), 'Box2D'),
+	    target=os.path.join(buildCtx.env.component.build_tree.libPathFromBuild(buildCtx), 'SnapBox2D'),
 	    includes=buildCtx.env.component.include_path_list,
 	    cxxflags=buildCtx.env.CXXFLAGS + ['-MMD', '-MP', '-Wno-strict-aliasing'],
 	    linkflags=buildCtx.env.LDFLAGS,
