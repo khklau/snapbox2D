@@ -48,6 +48,7 @@ publicHeaders = [
     ['..', '..', 'Box2D', 'Dynamics', 'Joints', 'b2RopeJoint.h'],
     ['..', '..', 'Box2D', 'Dynamics', 'Joints', 'b2WeldJoint.h'],
     ['..', '..', 'Box2D', 'Dynamics', 'Joints', 'b2WheelJoint.h'],
+    ['..', '..', 'SnapBox2D', 'snapshot.hpp'],
     ['..', '..', 'SnapBox2D', 'storage.hpp']]
 
 sourceFiles = [
@@ -96,6 +97,7 @@ sourceFiles = [
     ['..', '..', 'Box2D', 'Dynamics', 'Joints', 'b2RopeJoint.cpp'],
     ['..', '..', 'Box2D', 'Dynamics', 'Joints', 'b2WeldJoint.cpp'],
     ['..', '..', 'Box2D', 'Dynamics', 'Joints', 'b2WheelJoint.cpp'],
+    ['..', '..', 'SnapBox2D', 'snapshot.cxx'],
     ['..', '..', 'SnapBox2D', 'storage.cxx']]
 
 def configure(confCtx):
