@@ -14,7 +14,7 @@ class untyped_allocator;
 } // namespace cinterop
 } // nemespace turbo
 
-namespace snapbox2d {
+namespace snapbox2D {
 
 struct snapshot
 {
@@ -24,6 +24,6 @@ struct snapshot
     float step;
 };
 
-} // namespace snapbox2d
+} // namespace snapbox2D
 
 #endif

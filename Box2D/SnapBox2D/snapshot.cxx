@@ -4,7 +4,7 @@
 
 namespace tci = turbo::cinterop;
 
-namespace snapbox2d {
+namespace snapbox2D {
 
 snapshot::snapshot(const tci::untyped_allocator& original, const b2World& world)
     :
@@ -12,4 +12,4 @@ snapshot::snapshot(const tci::untyped_allocator& original, const b2World& world)
 	step(world.GetProfile().step)
 { }
 
-} // namespace snapbox2d
+} // namespace snapbox2D
