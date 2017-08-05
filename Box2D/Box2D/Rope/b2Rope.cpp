@@ -35,12 +35,12 @@ b2Rope::b2Rope()
 
 b2Rope::~b2Rope()
 {
-	b2Free(m_ps);
-	b2Free(m_p0s);
-	b2Free(m_vs);
-	b2Free(m_ims);
-	b2Free(m_Ls);
-	b2Free(m_as);
+	b2Free(m_ps, m_count * sizeof(b2Vec2));
+	b2Free(m_p0s, m_count * sizeof(b2Vec2));
+	b2Free(m_vs, m_count * sizeof(b2Vec2));
+	b2Free(m_ims, m_count * sizeof(float32));
+	b2Free(m_Ls, (m_count - 1) * sizeof(float32));
+	b2Free(m_as, (m_count - 2) * sizeof(float32));
 }
 
 void b2Rope::Initialize(const b2RopeDef* def)

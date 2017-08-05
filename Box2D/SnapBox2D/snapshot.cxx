@@ -1,14 +1,14 @@
 #include <SnapBox2D/snapshot.hpp>
 #include <Box2D/Dynamics/b2World.h>
-#include <turbo/cinterop/untyped_allocator.hpp>
+#include <turbo/memory/slab_allocator.hpp>
 
-namespace tci = turbo::cinterop;
+namespace tme = turbo::memory;
 
 namespace snapbox2D {
 
-snapshot::snapshot(const tci::untyped_allocator& original, const b2World& world)
+snapshot::snapshot(const tme::concurrent_sized_slab& original, const b2World& world)
     :
-	heap(new tci::untyped_allocator(original)),
+	heap(new tme::concurrent_sized_slab(original)),
 	step(world.GetProfile().step)
 { }
 

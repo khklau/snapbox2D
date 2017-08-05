@@ -39,7 +39,7 @@ public:
 	{
 		if (m_stack != m_array)
 		{
-			b2Free(m_stack);
+			b2Free(m_stack, m_capacity * sizeof(T));
 			m_stack = NULL;
 		}
 	}
@@ -54,7 +54,7 @@ public:
 			memcpy(m_stack, old, m_count * sizeof(T));
 			if (old != m_array)
 			{
-				b2Free(old);
+				b2Free(old, m_count * sizeof(T));
 			}
 		}
 

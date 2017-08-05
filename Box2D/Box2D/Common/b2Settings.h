@@ -131,7 +131,7 @@ typedef double float64;
 void* b2Alloc(size_t size);
 
 /// If you implement b2Alloc, you should also implement this function.
-void b2Free(void* mem);
+void b2Free(void* mem, size_t size);
 
 /// Logging function.
 void b2Log(const char* string, ...);

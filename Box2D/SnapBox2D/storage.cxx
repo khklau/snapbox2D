@@ -1,37 +1,25 @@
 #include <SnapBox2D/storage.hpp>
 #include <Box2D/Common/b2Settings.h>
 #include <cstddef>
-#include <turbo/cinterop/untyped_allocator.hpp>
+#include <turbo/memory/slab_allocator.hpp>
 #include <SnapBox2D/snapshot.hpp>
 
-namespace tci = turbo::cinterop;
 namespace tme = turbo::memory;
 
-namespace {
+namespace snapbox2D {
 
-std::vector<tme::block_config> load_config()
-{
-    // TODO load the config from a file
-    std::vector<tme::block_config> result;
-    return std::move(result);
-}
+extern turbo::memory::concurrent_sized_slab& local_allocator();
 
-tci::untyped_allocator& local_allocator()
-{
-    thread_local tci::untyped_allocator allocator_(4U, load_config());
-    return allocator_;
-}
-
-} // anonymous namespace
+} // namespace snapbox2D
 
 void* b2Alloc(std::size_t size)
 {
-    return local_allocator().malloc(size);
+    return snapbox2D::local_allocator().malloc(size);
 }
 
-void b2Free(void* mem)
+void b2Free(void* mem, std::size_t size)
 {
-    local_allocator().free(mem);
+    snapbox2D::local_allocator().free(mem, size);
 }
 
 namespace snapbox2D {

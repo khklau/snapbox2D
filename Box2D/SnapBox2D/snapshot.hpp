@@ -7,11 +7,11 @@
 class b2World;
 
 namespace turbo {
-namespace cinterop {
+namespace memory {
 
-class untyped_allocator;
+class concurrent_sized_slab;
 
-} // namespace cinterop
+} // namespace memory
 } // nemespace turbo
 
 namespace snapbox2D {
@@ -19,8 +19,8 @@ namespace snapbox2D {
 struct snapshot
 {
     snapshot() = delete;
-    snapshot(const turbo::cinterop::untyped_allocator& original, const b2World& world);
-    std::unique_ptr<turbo::cinterop::untyped_allocator> heap;
+    snapshot(const turbo::memory::concurrent_sized_slab& original, const b2World& world);
+    std::unique_ptr<turbo::memory::concurrent_sized_slab> heap;
     float step;
 };
 

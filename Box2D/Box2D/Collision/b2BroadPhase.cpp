@@ -33,8 +33,8 @@ b2BroadPhase::b2BroadPhase()
 
 b2BroadPhase::~b2BroadPhase()
 {
-	b2Free(m_moveBuffer);
-	b2Free(m_pairBuffer);
+	b2Free(m_moveBuffer, m_moveCapacity * sizeof(int32));
+	b2Free(m_pairBuffer, m_pairCapacity * sizeof(b2Pair));
 }
 
 int32 b2BroadPhase::CreateProxy(const b2AABB& aabb, void* userData)
@@ -74,7 +74,7 @@ void b2BroadPhase::BufferMove(int32 proxyId)
 		m_moveCapacity *= 2;
 		m_moveBuffer = (int32*)b2Alloc(m_moveCapacity * sizeof(int32));
 		memcpy(m_moveBuffer, oldBuffer, m_moveCount * sizeof(int32));
-		b2Free(oldBuffer);
+		b2Free(oldBuffer, m_moveCount * sizeof(int32));
 	}
 
 	m_moveBuffer[m_moveCount] = proxyId;
@@ -108,7 +108,7 @@ bool b2BroadPhase::QueryCallback(int32 proxyId)
 		m_pairCapacity *= 2;
 		m_pairBuffer = (b2Pair*)b2Alloc(m_pairCapacity * sizeof(b2Pair));
 		memcpy(m_pairBuffer, oldBuffer, m_pairCount * sizeof(b2Pair));
-		b2Free(oldBuffer);
+		b2Free(oldBuffer, m_pairCount * sizeof(b2Pair));
 	}
 
 	m_pairBuffer[m_pairCount].proxyIdA = b2Min(proxyId, m_queryProxyId);
