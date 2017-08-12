@@ -116,7 +116,7 @@ def build(buildCtx):
 		install_path=os.path.dirname(os.path.join(buildCtx.env.solution.install_tree.include, os.sep.join(header[2:(len(header))]))))
 	publishTaskList.append(publishTask)
     buildCtx.shlib(
-	    name='shlib_turbo_memory',
+	    name='shlib_SnapBox2D',
 	    source=[buildCtx.path.find_node(os.path.join(source)) for source in sourceFiles],
 	    target=os.path.join(buildCtx.env.component.build_tree.libPathFromBuild(buildCtx), 'SnapBox2D'),
 	    includes=buildCtx.env.component.include_path_list,
@@ -129,7 +129,7 @@ def build(buildCtx):
 	    install_path=buildCtx.env.component.install_tree.lib,
 	    after=publishTaskList + ['publish_Box2D_Box2D.h'])
     buildCtx.stlib(
-	    name='stlib_turbo_memory',
+	    name='stlib_SnapBox2D',
 	    source=[buildCtx.path.find_node(source) for source in sourceFiles],
 	    target=os.path.join(buildCtx.env.component.build_tree.libPathFromBuild(buildCtx), 'SnapBox2D'),
 	    includes=buildCtx.env.component.include_path_list,
