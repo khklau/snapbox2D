@@ -2,13 +2,14 @@
 #include <Box2D/Common/b2Settings.h>
 #include <cstddef>
 #include <turbo/memory/slab_allocator.hpp>
+#include <turbo/memory/slab_allocator.hxx>
 #include <SnapBox2D/snapshot.hpp>
 
 namespace tme = turbo::memory;
 
 namespace snapbox2D {
 
-extern turbo::memory::concurrent_sized_slab& local_allocator();
+turbo::memory::concurrent_sized_slab& local_allocator();
 
 } // namespace snapbox2D
 
