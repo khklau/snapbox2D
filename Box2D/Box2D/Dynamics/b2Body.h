@@ -52,21 +52,63 @@ struct b2BodyDef
 {
 	/// This constructor sets the body definition default values.
 	b2BodyDef()
+	    :
+		type(b2_staticBody),
+		position{0.0f, 0.0f},
+		angle(0.0f),
+		linearVelocity{0.0f, 0.0f},
+		angularVelocity(0.0f),
+		linearDamping(0.0f),
+		angularDamping(0.0f),
+		allowSleep(true),
+		awake(true),
+		fixedRotation(false),
+		bullet(false),
+		active(true),
+		userData(nullptr),
+		gravityScale(1.0f)
+	{ }
+
+	// The copy constructor
+	b2BodyDef(const b2BodyDef& other)
+	    :
+		type(other.type),
+		position{other.position.x, other.position.y},
+		angle(other.angle),
+		linearVelocity{other.linearVelocity.x, other.linearVelocity.y},
+		angularVelocity(other.angularVelocity),
+		linearDamping(other.linearDamping),
+		angularDamping(other.angularDamping),
+		allowSleep(other.allowSleep),
+		awake(other.awake),
+		fixedRotation(other.fixedRotation),
+		bullet(other.bullet),
+		active(other.active),
+		userData(other.userData),
+		gravityScale(other.gravityScale)
+	{ }
+
+	// The assignment operator
+	b2BodyDef& operator=(const b2BodyDef& other)
 	{
-		userData = NULL;
-		position.Set(0.0f, 0.0f);
-		angle = 0.0f;
-		linearVelocity.Set(0.0f, 0.0f);
-		angularVelocity = 0.0f;
-		linearDamping = 0.0f;
-		angularDamping = 0.0f;
-		allowSleep = true;
-		awake = true;
-		fixedRotation = false;
-		bullet = false;
-		type = b2_staticBody;
-		active = true;
-		gravityScale = 1.0f;
+	    if (this != &other)
+	    {
+		this->type = other.type;
+		this->position.Set(other.position.x, other.position.y);
+		this->angle = other.angle;
+		this->linearVelocity.Set(other.linearVelocity.x, other.linearVelocity.y);
+		this->angularVelocity = other.angularVelocity;
+		this->linearDamping = other.linearDamping;
+		this->angularDamping = other.angularDamping;
+		this->allowSleep = other.allowSleep;
+		this->awake = other.awake;
+		this->fixedRotation = other.fixedRotation;
+		this->bullet = other.bullet;
+		this->active = other.active;
+		this->userData = other.userData;
+		this->gravityScale = other.gravityScale;
+	    }
+	    return *this;
 	}
 
 	/// The body type: static, kinematic, or dynamic.
