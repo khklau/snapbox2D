@@ -32,10 +32,28 @@ class b2Fixture;
 struct b2Filter
 {
 	b2Filter()
+		:
+			categoryBits(0x0001),
+			maskBits(0xFFFF),
+			groupIndex(0)
+	{ }
+
+	b2Filter(const b2Filter& other)
+		:
+			categoryBits(other.categoryBits),
+			maskBits(other.maskBits),
+			groupIndex(other.groupIndex)
+	{ }
+
+	b2Filter& operator=(const b2Filter& other)
 	{
-		categoryBits = 0x0001;
-		maskBits = 0xFFFF;
-		groupIndex = 0;
+		if (this != &other)
+		{
+			categoryBits = other.categoryBits;
+			maskBits = other.maskBits;
+			groupIndex = other.groupIndex;
+		}
+		return *this;
 	}
 
 	/// The collision category bits. Normally you would just set one bit.
@@ -55,15 +73,44 @@ struct b2Filter
 /// abstract fixture definition. You can reuse fixture definitions safely.
 struct b2FixtureDef
 {
-	/// The constructor sets the default fixture definition values.
+	/// The default constructor sets the default fixture definition values.
 	b2FixtureDef()
+		:
+			shape(NULL),
+			userData(NULL),
+			friction(0.2f),
+			restitution(0.0f),
+			density(0.0f),
+			isSensor(false),
+			filter()
+	{ }
+
+	/// The copy constructor
+	b2FixtureDef(const b2FixtureDef& other)
+		:
+			shape(other.shape),
+			userData(other.userData),
+			friction(other.friction),
+			restitution(other.restitution),
+			density(other.density),
+			isSensor(other.isSensor),
+			filter(other.filter)
+	{ }
+
+	/// The assignment operator
+	b2FixtureDef& operator=(const b2FixtureDef& other)
 	{
-		shape = NULL;
-		userData = NULL;
-		friction = 0.2f;
-		restitution = 0.0f;
-		density = 0.0f;
-		isSensor = false;
+		if (this != &other)
+		{
+			shape = other.shape;
+			userData = other.userData;
+			friction = other.friction;
+			restitution = other.restitution;
+			density = other.density;
+			isSensor = other.isSensor;
+			filter = other.filter;
+		}
+		return *this;
 	}
 
 	/// The shape, this must be set. The shape will be cloned, so you
