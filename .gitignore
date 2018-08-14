@@ -40,12 +40,8 @@
 /lib
 /include
 
-# GNU Global
-GPATH
-GRTAGS
-GSYMS
-GTAGS
-stl
+# Bear outut
+compile_commands.json
 
 # Box2D
 /Box2D/Build/vs2015/.vs

@@ -2,7 +2,7 @@
 #include <Box2D/Common/b2Settings.h>
 #include <cstddef>
 #include <turbo/memory/slab_allocator.hpp>
-#include <turbo/memory/slab_allocator.hxx>
+#include <turbo/memory/slab_allocator.hh>
 #include <SnapBox2D/snapshot.hpp>
 
 namespace tme = turbo::memory;
