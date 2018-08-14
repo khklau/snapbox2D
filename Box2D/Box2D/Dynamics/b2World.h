@@ -69,7 +69,15 @@ public:
 	/// Create a rigid body given a definition. No reference to the definition
 	/// is retained.
 	/// @warning This function is locked during callbacks.
-	b2Body* CreateBody(const b2BodyDef* def);
+	b2Body* CreateBody(const b2BodyDef* def, b2Body* place);
+
+	/// Create a rigid body given a definition. No reference to the definition
+	/// is retained.
+	/// @warning This function is locked during callbacks.
+	inline b2Body* CreateBody(const b2BodyDef* def)
+        {
+            return CreateBody(def, nullptr);
+        }
 
 	/// Destroy a rigid body given a definition. No reference to the definition
 	/// is retained. This function is locked during callbacks.

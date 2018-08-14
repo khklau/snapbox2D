@@ -104,7 +104,7 @@ void b2World::SetDebugDraw(b2Draw* debugDraw)
 	g_debugDraw = debugDraw;
 }
 
-b2Body* b2World::CreateBody(const b2BodyDef* def)
+b2Body* b2World::CreateBody(const b2BodyDef* def, b2Body* place)
 {
 	b2Assert(IsLocked() == false);
 	if (IsLocked())
@@ -112,7 +112,15 @@ b2Body* b2World::CreateBody(const b2BodyDef* def)
 		return NULL;
 	}
 
-	void* mem = m_blockAllocator.Allocate(sizeof(b2Body));
+        void* mem = nullptr;
+        if (place != nullptr)
+        {
+            mem = place;
+        }
+        else
+        {
+            mem = m_blockAllocator.Allocate(sizeof(b2Body));
+        }
 	b2Body* b = new (mem) b2Body(def, this);
 
 	// Add to world doubly linked list.
