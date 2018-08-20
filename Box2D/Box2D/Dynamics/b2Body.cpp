@@ -22,6 +22,52 @@
 #include <Box2D/Dynamics/Contacts/b2Contact.h>
 #include <Box2D/Dynamics/Joints/b2Joint.h>
 
+b2Body::b2Body()
+{
+        m_flags = 0;
+	m_world = NULL;
+
+	m_xf.p = b2Vec2_zero;
+	m_xf.q.Set(0.0f);
+
+	m_sweep.localCenter.SetZero();
+	m_sweep.c0 = m_xf.p;
+	m_sweep.c = m_xf.p;
+	m_sweep.a0 = 0.0f;
+	m_sweep.a = 0.0f;
+	m_sweep.alpha0 = 0.0f;
+
+	m_jointList = NULL;
+	m_contactList = NULL;
+	m_prev = NULL;
+	m_next = NULL;
+
+	m_linearVelocity = b2Vec2_zero;
+	m_angularVelocity = 0.0f;
+
+	m_linearDamping = 0.0f;
+	m_angularDamping = 0.0f;
+	m_gravityScale = 0.0f;
+
+	m_force.SetZero();
+	m_torque = 0.0f;
+
+	m_sleepTime = 0.0f;
+
+	m_type = b2_staticBody;
+        m_mass = 0.0f;
+        m_invMass = 0.0f;
+
+	m_I = 0.0f;
+	m_invI = 0.0f;
+
+	m_userData = NULL;
+
+	m_fixtureList = NULL;
+	m_fixtureCount = 0;
+
+}
+
 b2Body::b2Body(const b2BodyDef* bd, b2World* world)
 {
 	b2Assert(bd->position.IsValid());
